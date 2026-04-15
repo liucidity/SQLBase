@@ -1,9 +1,7 @@
 import React from "react";
 import {
   ResponsiveContainer,
-  ComposedChart,
-  Line,
-  Area,
+  BarChart,
   Bar,
   XAxis,
   YAxis,
@@ -12,110 +10,29 @@ import {
   Legend,
 } from "recharts";
 
-const yAxisFormatter = value =>
-  `$${value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
-
-const ResponsiveBarChart = ({
-  width,
-  height,
-  barSize,
-  lineColor,
-  barColor,
-  areaColor,
-  chartData,
-  companyName,
-}) => {
-  const chartTitle = `Financial Report: ${companyName}`;
-
+const ResponsiveBarChart = ({ chartData, xKey, yKey }) => {
   return (
-    <>
-      <div id="chart-title">
-        <h1
-          style={{
-            whiteSpace: "pre-line",
-            textAlign: "center",
-            // textAlign: "left",
-            // marginLeft: "17%",
-            lineHeight: "2em",
-            color: "#383838",
-          }}
+    <div style={{ width: "100%", height: 400 }}>
+      <ResponsiveContainer>
+        <BarChart
+          data={chartData}
+          margin={{ top: 20, right: 30, bottom: 70, left: 20 }}
         >
-          {chartTitle}
-        </h1>
-      </div>
-      <div style={{ width: width, height: height }}>
-        <ResponsiveContainer>
-          <ComposedChart
-            width={width - 150}
-            height={height + 100}
-            data={chartData} // change to "chartData" when ready
-            margin={{
-              top: 20,
-              right: 40,
-              bottom: 50,
-              left: 100,
-            }}
-          >
-            <CartesianGrid stroke="#d9d1ff" />
-            <XAxis
-              dataKey="year"
-              type="number"
-              domain={["dataMin", "dataMax"]}
-              padding={{ left: 20 }}
-              tick={{
-                fontSize: 25,
-                fontWeight: "600",
-                fill: "#383838",
-              }}
-              dy={10}
-            />
-            <YAxis
-              tickFormatter={yAxisFormatter}
-              tick={{ fontSize: 22, fontWeight: "600", fill: "#383838" }}
-              dx={-10}
-            />
-            <Tooltip
-              formatter={value => {
-                return `$${value
-                  .toString()
-                  .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`;
-              }}
-            />
-            <Legend
-              wrapperStyle={{
-                fontSize: "1.5em",
-                display: "flex",
-                flexDirection: "row",
-                justifyContent: "center",
-                paddingTop: "40px",
-                marginTop: "50px",
-                border: "2px",
-                borderColor: "#d9d1ff",
-              }}
-              iconSize={25}
-            />
-            <Area
-              type="monotone"
-              dataKey={"annual_revenue"}
-              fill={areaColor}
-              stroke={"#5d59bd"}
-            />
-            <Bar
-              dataKey={"annual_expenditures"}
-              barSize={barSize}
-              fill={barColor}
-            />
-            <Line
-              type="monotone"
-              dataKey={"total_assets"}
-              stroke={lineColor}
-              strokeWidth={2}
-              dot={{ strokeWidth: 4 }}
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </div>
-    </>
+          <CartesianGrid strokeDasharray="3 3" stroke="#d9d1ff" />
+          <XAxis
+            dataKey={xKey}
+            tick={{ fontSize: 12, fill: "#383838" }}
+            angle={-35}
+            textAnchor="end"
+            interval={0}
+          />
+          <YAxis tick={{ fontSize: 12, fill: "#383838" }} />
+          <Tooltip />
+          <Legend wrapperStyle={{ paddingTop: 20 }} />
+          <Bar dataKey={yKey} fill="#413ea0" barSize={40} />
+        </BarChart>
+      </ResponsiveContainer>
+    </div>
   );
 };
 

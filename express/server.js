@@ -40,7 +40,7 @@ const virtualDatabaseApiRoutes = require("./routes/virtual-database-api");
 const authApiRoutes = require("./routes/auth-api");
 const { authenticate } = require("./middleware/auth");
 
-app.use("/api/auth", authApiRoutes(dbHelpers));
+app.use("/api/auth", authApiRoutes({ ...dbHelpers, ...dbSeedQueryHelpers }));
 app.use("/api/databases", authenticate, userDatabaseApiRoutes(dbHelpers));
 app.use("/api/virtualDatabases", authenticate, virtualDatabaseApiRoutes(dbSeedQueryHelpers));
 app.use("/api/seed", authenticate, seedApiRoutes(dbSeedQueryHelpers));

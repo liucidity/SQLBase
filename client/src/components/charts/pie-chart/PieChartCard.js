@@ -1,110 +1,49 @@
 import React from "react";
 import ResponsivePieChart from "./ResponsivePieChart";
-import { FormInputDropdown } from "../../fields/FormInputDropdown";
-import { useForm } from "react-hook-form";
-import { Card } from "@mui/material";
+import {
+  Card,
+  Box,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 
-const PieChartCard = ({
-  tableList,
-  columnList,
-  valueList,
-  relTableList,
-  relColList,
-  indexes,
-  setIndexes,
-  selectHandler,
-  chartData,
-}) => {
-  const {
-    formState: { errors },
-    control,
-  } = useForm();
-
+const PieChartCard = ({ columns, pieKey, onPieKeyChange, chartData }) => {
   return (
     <Card
       sx={{
-        textAlign: "center",
-        paddingX: "30px",
-        marginTop: "90px",
-        backgroundColor: "#e8e8e8",
-        boxShadow: "0 8px 20px -6px #f7f7f7",
-        ":hover": { backgroundColor: "#f3f3f3" },
+        flex: 1,
+        minWidth: 400,
+        p: 3,
+        backgroundColor: "#f9f9f9",
+        boxShadow: "0 8px 20px -6px #e0e0e0",
       }}
     >
-      <div id="title">
-        <p style={{ fontSize: "1.5em" }}>Select Dataset</p>
-      </div>
-      <div id="dropdown-row-1">
-        <FormInputDropdown
-          name={"TableSelect"}
-          control={control}
-          label={"Select Table"}
-          menuOptions={tableList}
-          handleChange={event => {
-            selectHandler("pie", tableList, "tableIndex", event);
-            setIndexes(prev => ({
-              ...prev,
-              colIndex: 0,
-            }));
-          }}
-          value={tableList[indexes.tableIndex].value}
-        />
-        <FormInputDropdown
-          name={"ColumnSelect"}
-          control={control}
-          label={"Select Column"}
-          menuOptions={columnList}
-          handleChange={event =>
-            selectHandler("pie", columnList, "colIndex", event)
-          }
-          value={columnList[indexes.colIndex].value}
-        />
-        <FormInputDropdown
-          name={"ValueColumnSelect"}
-          control={control}
-          label={"Select Value"}
-          menuOptions={valueList}
-          handleChange={event =>
-            selectHandler("pie", valueList, "valIndex", event)
-          }
-          value={valueList[indexes.valIndex].value}
-        />
-      </div>
-      <div id="dropdown-row-2">
-        <FormInputDropdown
-          name={"RelTableSelect"}
-          control={control}
-          label={"Select Relation Table"}
-          menuOptions={relTableList}
-          handleChange={event =>
-            selectHandler("pie", relTableList, "relTableIndex", event)
-          }
-          value={relTableList[indexes.relTableIndex].value}
-        />
-        <FormInputDropdown
-          name={"RelColSelect"}
-          control={control}
-          label={"Select Relation Column"}
-          menuOptions={relColList}
-          handleChange={event => {
-            selectHandler("pie", relColList, "relColIndex", event);
-          }}
-          value={relColList[indexes.relColIndex].value}
-        />
-      </div>
-      <div id="chart">
-        <ResponsivePieChart
-          width={700}
-          height={450}
-          subTextColor={"#3a3a3b"}
-          tableName={tableList[indexes.tableIndex].value}
-          colName={columnList[indexes.colIndex].value}
-          valName={valueList[indexes.valIndex].value}
-          relTableName={relTableList[indexes.relTableIndex].value}
-          relColName={relColList[indexes.relColIndex].value}
-          chartData={chartData[String(relColList[indexes.relColIndex].value)]}
-        />
-      </div>
+      <Typography
+        variant="h6"
+        sx={{ mb: 2, textAlign: "center", color: "#383838" }}
+      >
+        Pie Chart
+      </Typography>
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+        <FormControl size="small" sx={{ minWidth: 200 }}>
+          <InputLabel>Group By</InputLabel>
+          <Select
+            value={pieKey}
+            onChange={e => onPieKeyChange(e.target.value)}
+            label="Group By"
+          >
+            {columns.map(col => (
+              <MenuItem key={col} value={col}>
+                {col}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      <ResponsivePieChart chartData={chartData} groupByKey={pieKey} />
     </Card>
   );
 };

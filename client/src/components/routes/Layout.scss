@@ -25,6 +25,11 @@
   width: var(--sidebar-collapsed-width);
 }
 
+.app-shell.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 0;
+}
+
 .sidebar-header {
   display: flex;
   flex-direction: row;

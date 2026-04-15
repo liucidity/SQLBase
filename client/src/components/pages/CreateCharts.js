@@ -1,172 +1,168 @@
-import React, { useState, useEffect, useCallback } from "react";
-import useGlobalState from "../../state/hooks/useGlobalState";
-import useChartsState from "../../state/hooks/useChartsState";
-import useSchemaState from "../../state/hooks/useSchemaState";
-import useSeedState from "../../state/hooks/useSeedState";
-import PieChartCard from "../charts/pie-chart/PieChartCard";
+import React, { useState } from "react";
+import useDatabase from "../../state/hooks/useDatabase";
 import BarChartCard from "../charts/bar-chart/BarChartCard";
-import { deepCopy } from "../../helpers/schemaFormHelpers";
+import PieChartCard from "../charts/pie-chart/PieChartCard";
+import SuccessSnackbar from "../snackbars/SuccessSnackbar";
 import {
-  initialPieChartData,
-  initialBarChartData,
-} from "../../state/data_structures/chartState";
+  Box,
+  Button,
+  TextField,
+  Typography,
+  CircularProgress,
+} from "@mui/material";
+import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import "./CreateCharts.scss";
 
 const CreateChartsPage = () => {
-  const { getTableNames, getColumnList } = useGlobalState();
-  const { yearsGenerator } = useSeedState();
-  const {
-    getUniqueValues,
-    getAllPieValues,
-    getRelTableList,
-    getRelColList,
-    filterPieChartData,
-  } = useChartsState();
+  const { state, queryDatabase } = useDatabase();
 
-  const { state } = useSchemaState();
-  let tableList = getTableNames();
-  let allTables = state.schemaState;
+  const [sql, setSql] = useState("SELECT * FROM your_table LIMIT 100");
+  const [rows, setRows] = useState([]);
+  const [columns, setColumns] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const [pieIndexes, setPieIndexes] = useState({
-    tableIndex: 0,
-    colIndex: 1,
-    valIndex: 0,
-    relTableIndex: 0,
-    relColIndex: 8,
+  const [xKey, setXKey] = useState("");
+  const [barYKey, setBarYKey] = useState("");
+  const [pieKey, setPieKey] = useState("");
+
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: "",
+    isError: false,
   });
 
-  const [pieColList, setPieColList] = useState(
-    getColumnList(allTables[pieIndexes.tableIndex])
-  );
-  const [pieValList, setPieValList] = useState(
-    getUniqueValues(
-      String(tableList[pieIndexes.tableIndex].value),
-      String(pieColList[pieIndexes.colIndex].value)
-    )
-  );
-  const [pieRelTableList, setPieRelTableList] = useState(
-    getRelTableList(String(tableList[pieIndexes.tableIndex].value))
-  );
-  const [pieRelColList, setPieRelColList] = useState(
-    getRelColList(String(pieRelTableList[pieIndexes.relTableIndex].value))
-  );
-  const [pieRelValList, setPieRelValList] = useState(
-    getAllPieValues(
-      String(pieRelTableList[pieIndexes.relTableIndex].value),
-      String(pieRelColList[pieIndexes.relColIndex].value),
-      pieIndexes.valIndex
-    )
-  );
-  const [pieChartData, setPieChartData] = useState(initialPieChartData);
+  const showSnackbar = (message, isError = false) =>
+    setSnackbar({ open: true, message, isError });
+  const closeSnackbar = () => setSnackbar(s => ({ ...s, open: false }));
 
-  const [barIndexes, setBarIndexes] = useState({
-    tableIndex: 0,
-    colIndex: 1,
-    valIndex: 0,
-  });
-
-  const [barColList, setBarColList] = useState(
-    getColumnList(allTables[barIndexes.tableIndex])
-  );
-  const [barValList, setBarValList] = useState(
-    getUniqueValues(
-      String(tableList[barIndexes.tableIndex].value),
-      String(barColList[barIndexes.colIndex].value)
-    )
-  );
-  const [barChartData, setBarChartData] = useState(initialBarChartData);
-
-  useEffect(() => {
-    setPieColList(prev => getColumnList(allTables[pieIndexes.tableIndex]));
-    setPieValList(prev =>
-      getUniqueValues(
-        String(tableList[pieIndexes.tableIndex].value),
-        String(pieColList[pieIndexes.colIndex].value)
-      )
-    );
-    setPieRelTableList(prev =>
-      getRelTableList(String(tableList[pieIndexes.tableIndex].value))
-    );
-    setPieRelColList(prev =>
-      getRelColList(String(pieRelTableList[pieIndexes.relTableIndex].value))
-    );
-    setPieRelValList(prev =>
-      getAllPieValues(
-        String(pieRelTableList[pieIndexes.relTableIndex].value),
-        String(pieRelColList[pieIndexes.relColIndex].value),
-        pieIndexes.valIndex
-      )
-    );
-  }, [
-    pieIndexes.colIndex,
-    pieIndexes.tableIndex,
-    pieIndexes.relTableIndex,
-    pieIndexes.relColIndex,
-    pieIndexes.valIndex,
-  ]);
-
-  useEffect(() => {
-    setBarColList(prev => getColumnList(allTables[barIndexes.tableIndex]));
-    setBarChartData(prev =>
-      yearsGenerator([5, 7, 9][Math.floor(Math.random() * 3)])
-    );
-  }, [barIndexes.colIndex, barIndexes.tableIndex, barIndexes.valIndex]);
-
-  const generatePieData = useCallback(() => {
-    setPieChartData(prev =>
-      filterPieChartData(
-        pieChartData,
-        String(pieRelColList[pieIndexes.relColIndex].value),
-        pieRelValList
-      )
-    );
-  }, [pieRelValList]);
-
-  useEffect(() => {
-    generatePieData(pieChartData, pieRelValList);
-  }, [generatePieData]);
-
-  const selectHandler = (chart, list, index, event) => {
-    if (chart === "pie") {
-      setPieIndexes(prev => {
-        let next = deepCopy(prev);
-        next[index] = list.map(val => val.value).indexOf(event.target.value);
-        return next;
-      });
+  const runQuery = async () => {
+    if (!state.databaseName) {
+      showSnackbar("No database loaded. Load a database first.", true);
+      return;
     }
-    if (chart === "bar") {
-      setBarIndexes(prev => {
-        let next = deepCopy(prev);
-        next[index] = list.map(val => val.value).indexOf(event.target.value);
-        return next;
-      });
+    setLoading(true);
+    try {
+      const result = await queryDatabase(state.databaseName, sql);
+      if (!result || result.length === 0) {
+        setRows([]);
+        setColumns([]);
+        showSnackbar("Query returned no rows.", true);
+      } else {
+        const cols = Object.keys(result[0]);
+        setRows(result);
+        setColumns(cols);
+        setXKey(cols[0] || "");
+        setBarYKey(cols[1] || cols[0] || "");
+        setPieKey(cols[0] || "");
+        showSnackbar(`${result.length} row${result.length !== 1 ? "s" : ""} loaded.`);
+      }
+    } catch (err) {
+      showSnackbar(err?.response?.data?.error || "Query failed.", true);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const barData = rows.map(row => ({
+    ...row,
+    [barYKey]: Number(row[barYKey]) || 0,
+  }));
+
+  const pieData = (() => {
+    const counts = {};
+    rows.forEach(row => {
+      const key = String(row[pieKey] ?? "null");
+      counts[key] = (counts[key] || 0) + 1;
+    });
+    return Object.entries(counts)
+      .map(([name, value]) => ({ name, value }))
+      .slice(0, 20);
+  })();
+
+  const hasData = rows.length > 0;
+
   return (
     <main>
-      <div id="chart-container">
-        <PieChartCard
-          tableList={tableList}
-          columnList={pieColList}
-          valueList={pieValList}
-          relTableList={pieRelTableList}
-          relColList={pieRelColList}
-          indexes={pieIndexes}
-          setIndexes={setPieIndexes}
-          selectHandler={selectHandler}
-          chartData={pieChartData}
-        />
-        <BarChartCard
-          tableList={tableList}
-          columnList={barColList}
-          valueList={barValList}
-          indexes={barIndexes}
-          setIndexes={setBarIndexes}
-          selectHandler={selectHandler}
-          chartData={barChartData}
-        />
-      </div>
+      <Box id="chart-container" sx={{ flexDirection: "column !important" }}>
+        <Box
+          sx={{
+            mb: 3,
+            p: 2,
+            border: "1px solid #e0e0e0",
+            borderRadius: 2,
+            background: "white",
+            width: "100%",
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
+            Database: <strong>{state.databaseName || "None loaded"}</strong>
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={2}
+            value={sql}
+            onChange={e => setSql(e.target.value)}
+            placeholder="SELECT * FROM your_table LIMIT 100"
+            variant="outlined"
+            size="small"
+            sx={{ mb: 1 }}
+          />
+          <Button
+            variant="contained"
+            startIcon={
+              loading ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <PlayArrowIcon />
+              )
+            }
+            onClick={runQuery}
+            disabled={loading}
+          >
+            Run Query
+          </Button>
+          {hasData && (
+            <Typography variant="caption" sx={{ ml: 2, color: "#666" }}>
+              {rows.length} row{rows.length !== 1 ? "s" : ""}
+            </Typography>
+          )}
+        </Box>
+
+        {hasData && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              gap: 3,
+              flexWrap: "wrap",
+              width: "100%",
+            }}
+          >
+            <BarChartCard
+              columns={columns}
+              xKey={xKey}
+              yKey={barYKey}
+              onXChange={setXKey}
+              onYChange={setBarYKey}
+              chartData={barData}
+            />
+            <PieChartCard
+              columns={columns}
+              pieKey={pieKey}
+              onPieKeyChange={setPieKey}
+              chartData={pieData}
+            />
+          </Box>
+        )}
+      </Box>
+
+      <SuccessSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        isError={snackbar.isError}
+        handleClose={closeSnackbar}
+      />
     </main>
   );
 };

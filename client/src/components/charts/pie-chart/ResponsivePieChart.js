@@ -2,72 +2,48 @@ import React, { useCallback, useState } from "react";
 import { PieChart, Pie } from "recharts";
 import ActivePieShape from "./ActivePieShape";
 import { pieChartColors } from "../../../state/data_structures/chartState";
-import { capitalizeWord, titleCase } from "../../../helpers/chartFormHelpers";
+import { capitalizeWord } from "../../../helpers/chartFormHelpers";
 
-const ResponsivePieChart = ({
-  width,
-  height,
-  subTextColor,
-  tableName,
-  colName,
-  valName,
-  relTableName,
-  relColName,
-  chartData,
-}) => {
+const ResponsivePieChart = ({ chartData = [], groupByKey = "" }) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const onPieEnter = useCallback(
-    (_, index) => {
-      setActiveIndex(index);
-    },
-    [setActiveIndex]
-  );
+  const onPieEnter = useCallback((_, index) => setActiveIndex(index), []);
 
-  const sectorName = capitalizeWord(relTableName);
-
-  const chartTitle = `${capitalizeWord(tableName)}: '${valName}'`;
-  const mid = `categorized by`;
-  const relTitle = `${sectorName}: '${capitalizeWord(relColName)}'`;
-  const hstyle = {
-    whiteSpace: "pre-line",
-    textAlign: "center",
-    // textAlign: "left",
-    // marginLeft: "17%",
-    lineHeight: "0.8em",
-    color: "#383838",
-  };
-  const pstyle = {
-    whiteSpace: "pre-line",
-    textAlign: "center",
-    // textAlign: "left",
-    // marginLeft: "17%",
-    lineHeight: "0.8em",
-    fontSize: "1.5em",
-    color: "#383838",
-  };
+  if (!chartData || chartData.length === 0) {
+    return (
+      <p style={{ textAlign: "center", color: "#999", padding: "40px 0" }}>
+        No data to display.
+      </p>
+    );
+  }
 
   return (
     <>
-      <div id="chart-title">
-        <h1 style={hstyle}>{chartTitle}</h1>
-        <p style={pstyle}>{mid}</p>
-        <h1 style={hstyle}>{relTitle}</h1>
-      </div>
-      <div id="pie-chart">
-        <PieChart width={width} height={height}>
+      <p
+        style={{
+          textAlign: "center",
+          color: "#666",
+          marginBottom: 4,
+          fontSize: "0.9em",
+        }}
+      >
+        Grouped by <strong>{capitalizeWord(groupByKey)}</strong> —{" "}
+        {chartData.length} categories
+      </p>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <PieChart width={500} height={400}>
           <Pie
             activeIndex={activeIndex}
             activeShape={
               <ActivePieShape
                 chartColors={pieChartColors}
-                subTextColor={subTextColor}
+                subTextColor="#3a3a3b"
                 activeIndex={activeIndex}
-                sectorName={sectorName.slice(0, -1)}
+                sectorName="record"
               />
             }
             data={chartData}
-            cx={width / 2}
-            cy={height / 2}
+            cx={250}
+            cy={200}
             innerRadius={100}
             outerRadius={140}
             dataKey="value"
@@ -78,4 +54,5 @@ const ResponsivePieChart = ({
     </>
   );
 };
+
 export default ResponsivePieChart;

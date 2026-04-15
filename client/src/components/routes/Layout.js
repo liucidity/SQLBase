@@ -1,7 +1,8 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { GlobalContext } from "../../state/GlobalStateProvider";
 import { useAuth } from "../../state/AuthProvider";
+import useDatabase from "../../state/hooks/useDatabase";
 import "./Layout.scss";
 import HomeIcon from "@mui/icons-material/Home";
 import StorageIcon from "@mui/icons-material/Storage";
@@ -29,8 +30,19 @@ const Layout = () => {
   const navigate = useNavigate();
   const [state] = useContext(GlobalContext);
   const { user, logout } = useAuth();
+  const { loadProgress } = useDatabase();
+  const loadedForUser = useRef(null);
+
+  // Auto-load the most recently used database when the user authenticates
+  useEffect(() => {
+    if (user && user.id !== loadedForUser.current) {
+      loadedForUser.current = user.id;
+      loadProgress().catch(() => {});
+    }
+  }, [user?.id]);
 
   const handleLogout = async () => {
+    loadedForUser.current = null;
     await logout();
     navigate("/");
   };
@@ -42,7 +54,7 @@ const Layout = () => {
     <div className={`app-shell${collapsed ? " collapsed" : ""}`}>
       <aside className="sidebar">
         <div className="sidebar-header">
-          <span className="sidebar-logo">◈</span>
+          {!collapsed && <span className="sidebar-logo">◈</span>}
           {!collapsed && <span className="sidebar-title">SQLBase</span>}
           <button
             className="sidebar-toggle"

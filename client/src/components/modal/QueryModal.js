@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from 'react';
-import { Modal, Box, Typography, Button, Container } from '@mui/material';
+import { Modal, Box, Typography } from '@mui/material';
 import mm from 'mermaid'
 import Mermaid from './Mermaid';
 import * as htmlToImage from 'html-to-image';
@@ -94,12 +94,7 @@ const handleDownload = () => {
 // }
 
 const QueryModal = (props) => {
-  // console.log(props)
-  // console.table(props.table)
-  // console.log(generateMermaid(props.table))
-
   let tableRef = useRef();
-  // handle click outside of modal download button to close modal
   useEffect(() => {
     let handler = (event) => {
       if (!tableRef.current.contains(event.target)) {
@@ -112,6 +107,9 @@ const QueryModal = (props) => {
     };
   });
 
+  const result = props.result || [];
+  const columns = result.length > 0 ? Object.keys(result[0]) : [];
+
   return (
     <Modal
       open={props.open}
@@ -121,48 +119,41 @@ const QueryModal = (props) => {
     >
       <Box sx={style}>
         <TableContainer id='tableContainer' ref={tableRef} sx={{ color: 'white' }}>
-          <Table stickyHeader aria-label="sticky table" sx={{ tableLayout: 'fixed', height: '90%', display: "block", overflowX: "auto", whiteSpace: "nowrap" }}>
-            <TableHead>
-              <TableRow>
-                {
-                  Object.keys(props.result[0]).map((column) => (
+          {result.length === 0 ? (
+            <Typography sx={{ color: 'white', textAlign: 'center', mt: 4, fontSize: '1.2em' }}>
+              No results returned.
+            </Typography>
+          ) : (
+            <Table stickyHeader aria-label="sticky table" sx={{ tableLayout: 'fixed', height: '90%', display: "block", overflowX: "auto", whiteSpace: "nowrap" }}>
+              <TableHead>
+                <TableRow>
+                  {columns.map((column) => (
                     <TableCell
                       key={column}
-                      align={column.align}
-                      style={{ minWidth: 170 }
-                      }
+                      style={{ minWidth: 170 }}
                       sx={{ fontSize: '1.3em' }}
                     >
                       {column}
                     </TableCell>
-                  ))
-                }
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {props.result
-                .map((result) => {
-                  return (
-                    <TableRow hover role="checkbox" tabIndex={-1} key={result.name}>
-                      {
-                        Object.values(result).map((value) => {
-                          // const value = result[field.fieldName];
-                          return (
-                            <TableCell key={value.id} sx={{ color: 'white', fontSize: '1em', overflow: "hidden", whiteSpace: "nowrap" }}>
-                              {value}
-                            </TableCell>
-                          )
-
-                        })
-                      }
-                    </TableRow>
-                  );
-                })}
-            </TableBody>
-          </Table>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {result.map((row, rowIndex) => (
+                  <TableRow hover role="checkbox" tabIndex={-1} key={rowIndex}>
+                    {Object.values(row).map((value, colIndex) => (
+                      <TableCell key={colIndex} sx={{ color: 'white', fontSize: '1em', overflow: "hidden", whiteSpace: "nowrap" }}>
+                        {String(value ?? '')}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TableContainer>
       </Box>
-    </Modal >
+    </Modal>
   );
 }
 

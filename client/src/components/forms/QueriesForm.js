@@ -12,6 +12,7 @@ import useQueryState from "../../state/hooks/useQueryState";
 import generateQuerySQL from "../../helpers/queryFormHelpers";
 import QueryModal from "../modal/QueryModal";
 import StorageIcon from "@mui/icons-material/Storage";
+import CircularProgress from "@mui/material/CircularProgress";
 
 const QueriesForm = ({
   table,
@@ -32,26 +33,40 @@ const QueriesForm = ({
 
   const { state } = useQueryState();
   const { queryDatabase } = useDatabase();
+
+  const [isOpen, setIsOpen] = useState({ modal: false, result: [] });
+  const [queryLoading, setQueryLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", isError: false });
+
+  const showSnackbar = (message, isError = false) =>
+    setSnackbar({ open: true, message, isError });
+  const closeSnackbar = () => setSnackbar(s => ({ ...s, open: false }));
+
+  const handleClose = () => setIsOpen({ modal: false, result: [] });
+
   const buttonHandler = async (target, tableIndex) => {
-    console.log("state", state);
     if (target === "query") {
-      let result = await queryDatabase(
-        state.databaseName,
-        generateQuerySQL(queries)[tableIndex]
-      );
-      console.log(result);
-      setIsOpen({ modal: true, result: result });
+      if (!state.databaseName) {
+        showSnackbar("No database loaded. Load a database first.", true);
+        return;
+      }
+      setQueryLoading(true);
+      try {
+        const result = await queryDatabase(
+          state.databaseName,
+          generateQuerySQL(queries)[tableIndex]
+        );
+        setIsOpen({ modal: true, result: result || [] });
+      } catch (err) {
+        showSnackbar(err?.response?.data?.error || "Query failed.", true);
+      } finally {
+        setQueryLoading(false);
+      }
     }
   };
 
-  const [isOpen, setIsOpen] = useState({
-    modal: false,
-    result: null,
-  });
-  const handleClose = () => isOpen && setIsOpen(false);
-
   return (
-    <div className="query-table" onClick={handleClose}>
+    <div className="query-table">
       {isOpen.modal && (
         <QueryModal
           open={isOpen.modal}
@@ -197,8 +212,12 @@ const QueriesForm = ({
       })}
 
       <div className="add-remove-button">
-        <Button onClick={() => buttonHandler("query", tableIndex)}>
-          <StorageIcon /> <div>Query Database</div>
+        <Button
+          onClick={() => buttonHandler("query", tableIndex)}
+          disabled={queryLoading}
+          startIcon={queryLoading ? <CircularProgress size={16} /> : <StorageIcon />}
+        >
+          <div>{queryLoading ? "Running..." : "Query Database"}</div>
         </Button>
 
         <Button
@@ -209,6 +228,12 @@ const QueriesForm = ({
           <DeleteForeverIcon /> <div>Delete Query</div>
         </Button>
       </div>
+      <SuccessSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        isError={snackbar.isError}
+        handleClose={closeSnackbar}
+      />
     </div>
   );
 };

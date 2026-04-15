@@ -108,9 +108,16 @@ const SchemaForm = ({
               menuOptions={[
                 { label: "None", value: "" },
                 { label: "INT", value: "INT" },
+                { label: "BIGINT", value: "BIGINT" },
+                { label: "NUMERIC", value: "NUMERIC" },
+                { label: "DECIMAL", value: "DECIMAL" },
+                { label: "FLOAT", value: "FLOAT" },
                 { label: "VARCHAR", value: "VARCHAR" },
+                { label: "TEXT", value: "TEXT" },
                 { label: "BOOLEAN", value: "BOOLEAN" },
                 { label: "DATE", value: "DATE" },
+                { label: "TIMESTAMP", value: "TIMESTAMP" },
+                { label: "UUID", value: "UUID" },
               ]}
               handleChange={e =>
                 handleChange(e, "dataType", tableIndex, fieldIndex)
@@ -135,7 +142,8 @@ const SchemaForm = ({
               menuOptions={[
                 { label: "None", value: "" },
                 { label: "NOT NULL", value: "NOT NULL" },
-                { label: "UNIQUE", value: " UNIQUE" },
+                { label: "UNIQUE", value: "UNIQUE" },
+                { label: "PRIMARY KEY", value: "PRIMARY KEY" },
                 { label: "SERIAL", value: "SERIAL" },
               ]}
               handleChange={e =>
@@ -152,6 +160,7 @@ const SchemaForm = ({
                 { label: "None", value: "" },
                 { label: "NOT NULL", value: "NOT NULL" },
                 { label: "UNIQUE", value: "UNIQUE" },
+                { label: "PRIMARY KEY", value: "PRIMARY KEY" },
                 { label: "SERIAL", value: "SERIAL" },
               ]}
               handleChange={e =>

@@ -33,6 +33,7 @@ const useDatabase = () => {
   // loads last created state into state
   const loadProgress = async () => {
     const { data } = await axios.get(`/api/tables`);
+    if (!data || data.length === 0) return;
     const globalStateString = JSON.parse(data[0]["global_state"]);
     loadData(globalStateString);
   };

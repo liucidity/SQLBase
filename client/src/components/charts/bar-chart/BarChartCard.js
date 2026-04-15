@@ -1,85 +1,65 @@
 import React from "react";
 import ResponsiveBarChart from "./ResponsiveBarChart";
-import { FormInputDropdown } from "../../fields/FormInputDropdown";
-import { useForm } from "react-hook-form";
-import { Card } from "@mui/material";
+import {
+  Card,
+  Box,
+  Typography,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 
-const BarChartCard = ({
-  tableList,
-  columnList,
-  valueList,
-  indexes,
-  setIndexes,
-  selectHandler,
-  chartData,
-}) => {
-  const {
-    formState: { errors },
-    control,
-  } = useForm();
-
+const BarChartCard = ({ columns, xKey, yKey, onXChange, onYChange, chartData }) => {
   return (
     <Card
       sx={{
-        textAlign: "center",
-        paddingX: "30px",
-        marginTop: "90px",
-        backgroundColor: "#e8e8e8",
-        boxShadow: "0 8px 20px -6px #f7f7f7",
-        ":hover": { backgroundColor: "#f3f3f3" },
+        flex: 1,
+        minWidth: 400,
+        p: 3,
+        backgroundColor: "#f9f9f9",
+        boxShadow: "0 8px 20px -6px #e0e0e0",
       }}
     >
-      <div id="title">
-        <p style={{ fontSize: "1.5em" }}>Select Dataset</p>
-      </div>
-      <div id="dropdown-row-1">
-        <FormInputDropdown
-          name={"TableSelect"}
-          control={control}
-          label={"Select Table"}
-          menuOptions={tableList}
-          handleChange={event => {
-            selectHandler("bar", tableList, "tableIndex", event);
-            setIndexes(prev => ({
-              ...prev,
-              colIndex: 0,
-            }));
-          }}
-          value={tableList[indexes.tableIndex].value}
-        />
-        <FormInputDropdown
-          name={"ColumnSelect"}
-          control={control}
-          label={"Select Column"}
-          menuOptions={columnList}
-          handleChange={event =>
-            selectHandler("bar", columnList, "colIndex", event)
-          }
-          value={columnList[indexes.colIndex].value}
-        />
-        <FormInputDropdown
-          name={"ValueColumnSelect"}
-          control={control}
-          label={"Select Value"}
-          menuOptions={valueList}
-          handleChange={event =>
-            selectHandler("bar", valueList, "valIndex", event)
-          }
-          value={valueList[indexes.valIndex].value}
-        />
-      </div>
-      <div id="chart">
-        <ResponsiveBarChart
-          width={1000}
-          height={600}
-          barSize={40}
-          lineColor={"#f58369"}
-          barColor={"#413ea0"}
-          areaColor={"#8884d8"}
-          companyName={valueList[indexes.valIndex].value}
-          chartData={chartData}
-        />
-      </div>
+      <Typography
+        variant="h6"
+        sx={{ mb: 2, textAlign: "center", color: "#383838" }}
+      >
+        Bar Chart
+      </Typography>
+      <Box
+        sx={{ display: "flex", gap: 2, mb: 2, justifyContent: "center" }}
+      >
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>X Axis</InputLabel>
+          <Select
+            value={xKey}
+            onChange={e => onXChange(e.target.value)}
+            label="X Axis"
+          >
+            {columns.map(col => (
+              <MenuItem key={col} value={col}>
+                {col}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Y Axis</InputLabel>
+          <Select
+            value={yKey}
+            onChange={e => onYChange(e.target.value)}
+            label="Y Axis"
+          >
+            {columns.map(col => (
+              <MenuItem key={col} value={col}>
+                {col}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Box>
+      <ResponsiveBarChart chartData={chartData} xKey={xKey} yKey={yKey} />
     </Card>
   );
 };
