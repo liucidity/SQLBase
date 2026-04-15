@@ -1,7 +1,7 @@
 const express = require("express");
-const router = express.Router();
 
 module.exports = ({ createDB, dropDB, queryDBParams, queryDB }) => {
+  const router = express.Router();
   // Create a new PostgreSQL database
   router.put("/", (req, res) => {
     const globalStateString = req.body.globalStateString;

@@ -1,7 +1,7 @@
 const express = require("express");
-const router = express.Router();
 
 module.exports = ({ seedTable }) => {
+  const router = express.Router();
   router.put('/', (req, res) => {
     let databaseName = req.body.databaseName;
     let seedString = req.body.seedString

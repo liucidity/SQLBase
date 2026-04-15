@@ -11,41 +11,40 @@ const sampleSeedState = {
 };
 
 export const generateSeedSQL = seedState => {
-  let seedStrings = [];
-  let firstLine = [];
-  let values = [];
+  const seedStrings = [];
 
-  Object.entries(seedState[0]).forEach(([table, seedData], i) => {
-    firstLine[i] = `INSERT INTO ${table}(`;
-    values[i] = `VALUES`;
+  Object.entries(seedState[0]).forEach(([table, seedData]) => {
+    if (!seedData || seedData.length === 0) return;
+
+    let firstLine = `INSERT INTO ${table}(`;
+    let values = `VALUES`;
+
     seedData.forEach((dataset, j) => {
       Object.entries(dataset).forEach(([field, value], k) => {
         if (j === 0) {
           k === Object.keys(dataset).length - 1
-            ? (firstLine[i] += `"${field}")`)
-            : (firstLine[i] += `"${field}", `);
+            ? (firstLine += `"${field}")`)
+            : (firstLine += `"${field}", `);
         }
         if (k === 0) {
-          values[i] += ` (${typeof value === "number" ? value : "'" + value + "'"
-            }, `;
+          values += ` (${typeof value === "number" ? value : "'" + value + "'"}, `;
         } else if (k === Object.keys(dataset).length - 1) {
           j === seedData.length - 1
-            ? (values[i] += `${typeof value === "number" ? value : "'" + value + "'"
-              })`)
-            : (values[i] += `${typeof value === "number" ? value : "'" + value + "'"
-              }),\n                  `);
+            ? (values += `${typeof value === "number" ? value : "'" + value + "'"}`)
+            : (values += `${typeof value === "number" ? value : "'" + value + "'"}),\n                  `);
         } else {
-          values[i] += `${typeof value === "number" ? value : "'" + value + "'"
-            }, `;
+          values += `${typeof value === "number" ? value : "'" + value + "'"}, `;
         }
       });
     });
-    seedStrings[i] = `${firstLine[i]}
-    ${values[i]};`.replace(/L'O/g, "LO").replace(/l's/g, "ls").replace(/g's/g, "gs")
 
+    seedStrings.push(
+      `${firstLine}\n    ${values};`
+        .replace(/L'O/g, "LO")
+        .replace(/l's/g, "ls")
+        .replace(/g's/g, "gs")
+    );
   });
 
-  let seedStringLinebreak = seedStrings.join("\r\n\n");
-
-  return seedStringLinebreak;
+  return seedStrings.join("\r\n\n");
 };

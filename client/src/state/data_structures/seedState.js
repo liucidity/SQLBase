@@ -100,8 +100,4 @@ export const seedFormData = [
 
 // PART II: Data Structures
 
-export const initialSeedState = {
-  companies: [],
-  employees: [],
-  products: []
-};
+export const initialSeedState = {};

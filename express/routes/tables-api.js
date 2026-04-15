@@ -1,7 +1,7 @@
 const express = require("express");
-const router = express.Router();
 
 module.exports = ({ queryDBParams, queryDB }) => {
+  const router = express.Router();
   // Insert new database record (legacy — upsert via POST is preferred)
   router.put("/", (req, res) => {
     const { databaseName, globalStateString } = req.body;

@@ -1,7 +1,7 @@
 const express = require("express");
-const router = express.Router();
 
 module.exports = ({ queryTable }) => {
+  const router = express.Router();
   router.get('/', (req, res) => {
     // console.log('query', req)
     let databaseName = req.query.databaseName;

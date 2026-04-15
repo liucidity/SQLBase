@@ -14,6 +14,7 @@ import {
   randBrand,
   randFullName,
   randProduct,
+  randWord,
 } from "@ngneat/falso";
 
 import { SEED_ALL_FAKE_DATA, SEED_FAKE_DATA } from "../reducers/globalReducer";
@@ -202,29 +203,51 @@ const useSeedState = () => {
     return products;
   };
 
+  const genericSeed = (tableName, numDataPoints) => {
+    const tableSchema = state.schemaState.find(t => t.table === tableName);
+    const fields = tableSchema ? tableSchema.fields : [];
+    const rows = [];
+    for (let i = 0; i < numDataPoints; i++) {
+      const row = {};
+      fields.forEach(field => {
+        const dt = (field.dataType || "").toUpperCase();
+        if (dt.includes("INT")) {
+          row[field.fieldName] = randNumber({ min: 1, max: 1000 });
+        } else if (dt.includes("FLOAT") || dt.includes("DECIMAL") || dt.includes("NUMERIC")) {
+          row[field.fieldName] = randFloat({ min: 0, max: 1000, fraction: 2 });
+        } else if (dt.includes("BOOL")) {
+          row[field.fieldName] = Math.random() > 0.5;
+        } else if (dt.includes("DATE") || dt.includes("TIME")) {
+          row[field.fieldName] = new Date(Date.now() - Math.random() * 1e11)
+            .toISOString()
+            .split("T")[0];
+        } else {
+          row[field.fieldName] = randWord();
+        }
+      });
+      rows.push(row);
+    }
+    return rows;
+  };
+
+  const tableToSeedFn = {
+    companies: companySeed,
+    employees: employeeSeed,
+    products: productSeed,
+  };
+
   const generateAllSeedState = seedFormData => {
-    const tableToSeedFn = {
-      companies: companySeed,
-      employees: employeeSeed,
-      products: productSeed,
-    };
     const seedState = {};
     seedFormData.forEach(table => {
-      seedState[table[0]] = tableToSeedFn[table[0]](table[1]);
+      const seedFn = tableToSeedFn[table[0]] || (n => genericSeed(table[0], n));
+      seedState[table[0]] = seedFn(table[1]);
     });
     dispatch({ type: SEED_ALL_FAKE_DATA, seedState });
   };
 
   const generateSeedState = (tableName, numDataPoints) => {
-    const tableToSeedFn = {
-      companies: companySeed,
-      employees: employeeSeed,
-      products: productSeed,
-    };
-    let seedData = {};
-    seedData = tableToSeedFn[tableName](numDataPoints);
-    console.log("SEED DATA FOR DISPATCH: ", seedData);
-
+    const seedFn = tableToSeedFn[tableName] || (n => genericSeed(tableName, n));
+    const seedData = seedFn(numDataPoints);
     dispatch({ type: SEED_FAKE_DATA, seedData, tableName });
   };
 

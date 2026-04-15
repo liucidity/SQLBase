@@ -12,6 +12,7 @@ import { generateSeedSQL } from "../../helpers/seedFormHelpers";
 import SaveIcon from "@mui/icons-material/Save";
 import DownloadIcon from "@mui/icons-material/Download";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import SuccessSnackbar from "../snackbars/SuccessSnackbar";
 
 const CreateSeedsPage = () => {
   const { state, generateSeedState } = useSeedState();
@@ -24,9 +25,32 @@ const CreateSeedsPage = () => {
   let seedString = generateSeedSQL(seeds);
 
   const [isOpen, setIsOpen] = useState({ modal: false, table: null });
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", isError: false });
+
+  const showSnackbar = (message, isError = false) =>
+    setSnackbar({ open: true, message, isError });
+  const closeSnackbar = () => setSnackbar(s => ({ ...s, open: false }));
 
   const buttonHandler = table => setIsOpen({ modal: true, table });
   const handleClose = () => isOpen && setIsOpen(false);
+
+  const handleSeed = async () => {
+    try {
+      await seedDatabase(state.databaseName, seedString);
+      showSnackbar("Database seeded successfully.");
+    } catch (err) {
+      showSnackbar(err?.response?.data?.error || "Failed to seed database.", true);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await saveProgress();
+      showSnackbar("Progress saved.");
+    } catch (err) {
+      showSnackbar(err?.response?.data?.error || "Failed to save.", true);
+    }
+  };
 
   return (
     <main id="seedsMain">
@@ -69,7 +93,7 @@ const CreateSeedsPage = () => {
           variant="contained"
           color="primary"
           startIcon={<AutoFixHighIcon />}
-          onClick={() => seedDatabase(state.databaseName, seedString)}
+          onClick={handleSeed}
         >
           Seed
         </Button>
@@ -77,7 +101,7 @@ const CreateSeedsPage = () => {
           variant="outlined"
           color="primary"
           startIcon={<SaveIcon />}
-          onClick={() => saveProgress()}
+          onClick={handleSave}
         >
           Save
         </Button>
@@ -90,6 +114,13 @@ const CreateSeedsPage = () => {
           Load
         </Button>
       </Box>
+
+      <SuccessSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        isError={snackbar.isError}
+        handleClose={closeSnackbar}
+      />
     </main>
   );
 };

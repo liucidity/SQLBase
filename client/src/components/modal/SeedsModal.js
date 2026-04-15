@@ -142,23 +142,28 @@ const SeedsModal = (props) => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {props.seeds[0][props.table.table]
-                .map((row) => {
-                  return (
-                    <TableRow hover role="checkbox" tabIndex={-1} key={row.name}>
-                      {props.table.fields.map((field) => {
-                        const value = row[field.fieldName];
-                        return (
-                          <TableCell key={field.id} align={field.align} sx={{ color: 'white', fontSize: '1em', overflow:"hidden" ,whiteSpace: "nowrap" }}>
-                            {field.format && typeof value === 'number'
-                              ? field.format(value)
-                              : value}
-                          </TableCell>
-                        );
-                      })}
-                    </TableRow>
-                  );
-                })}
+              {(props.seeds?.[0]?.[props.table?.table] || []).length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={props.table.fields.length} sx={{ color: 'white', textAlign: 'center' }}>
+                    No seed data generated yet. Use the form to generate rows.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                (props.seeds[0][props.table.table]).map((row, rowIndex) => (
+                  <TableRow hover role="checkbox" tabIndex={-1} key={rowIndex}>
+                    {props.table.fields.map((field) => {
+                      const value = row[field.fieldName];
+                      return (
+                        <TableCell key={field.fieldName} align={field.align} sx={{ color: 'white', fontSize: '1em', overflow: "hidden", whiteSpace: "nowrap" }}>
+                          {field.format && typeof value === 'number'
+                            ? field.format(value)
+                            : value}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </TableContainer>

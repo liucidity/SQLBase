@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { CopyBlock, monokai } from "react-code-blocks";
 import { Button, Box } from "@mui/material";
+import SuccessSnackbar from "../snackbars/SuccessSnackbar";
 import QueriesForm from "../forms/QueriesForm";
 import "../forms/QueriesForm.scss";
 import generateQuerySQL from "../../helpers/queryFormHelpers";
@@ -28,9 +29,29 @@ const CreateQueriesPage = () => {
   let schemas = state.queryState[0].schemas;
   let queries = state.queryState[0].queries;
 
-  const copyHandler = () => {
-    let allStrings = generateQuerySQL(queries);
-    return navigator.clipboard.writeText(allStrings.join(""));
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", isError: false });
+
+  const showSnackbar = (message, isError = false) =>
+    setSnackbar({ open: true, message, isError });
+  const closeSnackbar = () => setSnackbar(s => ({ ...s, open: false }));
+
+  const copyHandler = async () => {
+    try {
+      const allStrings = generateQuerySQL(queries);
+      await navigator.clipboard.writeText(allStrings.join(""));
+      showSnackbar("Queries copied to clipboard.");
+    } catch {
+      showSnackbar("Failed to copy to clipboard.", true);
+    }
+  };
+
+  const handleSave = async () => {
+    try {
+      await saveProgress();
+      showSnackbar("Progress saved.");
+    } catch (err) {
+      showSnackbar(err?.response?.data?.error || "Failed to save.", true);
+    }
   };
 
   return (
@@ -84,7 +105,7 @@ const CreateQueriesPage = () => {
             variant="outlined"
             color="primary"
             startIcon={<ContentCopyIcon />}
-            onClick={() => copyHandler()}
+            onClick={copyHandler}
           >
             Copy All Queries
           </Button>
@@ -96,7 +117,7 @@ const CreateQueriesPage = () => {
           variant="outlined"
           color="primary"
           startIcon={<SaveIcon />}
-          onClick={() => saveProgress()}
+          onClick={handleSave}
         >
           Save
         </Button>
@@ -109,6 +130,13 @@ const CreateQueriesPage = () => {
           Load
         </Button>
       </Box>
+
+      <SuccessSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        isError={snackbar.isError}
+        handleClose={closeSnackbar}
+      />
     </main>
   );
 };

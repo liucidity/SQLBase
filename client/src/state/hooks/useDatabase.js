@@ -23,50 +23,25 @@ const useDatabase = () => {
    */
 
   //save state progress
-  const saveProgress = () => {
+  const saveProgress = async () => {
     const globalStateString = JSON.stringify(state);
     const databaseName = state.databaseName;
     const databaseUuid = state.databaseUuid;
-    return axios
-      .post(`/api/tables`, {
-        databaseName,
-        globalStateString,
-        databaseUuid,
-      })
-      .then(data => console.log("Save successful: ", data));
+    await axios.post(`/api/tables`, { databaseName, globalStateString, databaseUuid });
   };
-  // unused: loads last created state into state
-  const loadProgress = () => {
-    return axios
-      .get(`/api/tables`) // add ${id} to route if we have multiple users
-      .then(data => {
-        console.log(
-          "Data Loaded from DB: ",
-          JSON.parse(data.data[0]["global_state"])
-        );
-        const globalStateString = JSON.parse(data.data[0]["global_state"]);
-        loadData(globalStateString);
-      })
-      .catch(err => {
-        console.log("Error loading: ", err);
-      });
+
+  // loads last created state into state
+  const loadProgress = async () => {
+    const { data } = await axios.get(`/api/tables`);
+    const globalStateString = JSON.parse(data[0]["global_state"]);
+    loadData(globalStateString);
   };
 
   //loads target database/saved state into state
-  const loadDatabase = uuid => {
-    console.log(uuid);
-
-    return axios
-      .get(`/api/tables`, { params: { uuid } }) // add ${id} to route if we have multiple users
-      .then(data => {
-        console.log(data.data);
-        console.log("Loading log: ", JSON.parse(data.data[0]["global_state"]));
-        const globalStateString = JSON.parse(data.data[0]["global_state"]);
-        loadData(globalStateString);
-      })
-      .catch(err => {
-        console.log("Error loading: ", err);
-      });
+  const loadDatabase = async uuid => {
+    const { data } = await axios.get(`/api/tables`, { params: { uuid } });
+    const globalStateString = JSON.parse(data[0]["global_state"]);
+    loadData(globalStateString);
   };
 
   // get current user
@@ -80,64 +55,28 @@ const useDatabase = () => {
   };
 
   const deleteDatabase = async (databaseName, databaseUuid) => {
-    return axios
-      .all([
-        await axios.post(`/api/databases`, { databaseName }),
-        await axios.delete(`/api/tables`, { params: { databaseUuid } }),
-      ])
-      .then(
-        axios.spread((dropDBData, removeStateData) => {
-          console.log("post dropDBData", dropDBData);
-          console.log("delete removeStateData", removeStateData);
-        })
-      )
-      .catch(err => {
-        console.log("Error loading: ", err);
-      });
+    await axios.post(`/api/databases`, { databaseName });
+    await axios.delete(`/api/tables`, { params: { databaseUuid } });
   };
 
   //inserts into virtual database
   const seedDatabase = async (databaseName, seedString) => {
-    return axios
-      .put("/api/seed", { databaseName, seedString })
-      .then(data => {
-        // console.log(JSON.parse(data.data.global_state))
-        return data.data;
-      })
-      .catch(err => {
-        console.log("Error loading: ", err);
-      });
+    const { data } = await axios.put("/api/seed", { databaseName, seedString });
+    return data;
   };
 
   //runs query from virtual database
   const queryDatabase = async (databaseName, queryString) => {
-    console.log(databaseName, queryString);
-    return axios
-      .get("/api/query", {
-        params: { databaseName: databaseName, queryString: queryString },
-      })
-      .then(data => {
-        // console.log(JSON.parse(data.data.global_state))
-        console.log(data.data.rows);
-        return data.data.rows;
-      })
-      .catch(err => {
-        console.log("Error loading: ", err);
-      });
+    const { data } = await axios.get("/api/query", {
+      params: { databaseName, queryString },
+    });
+    return data.rows;
   };
 
   //Retrieves List of databases found in Core database
-  const getDatabases = () => {
-    console.log("getDatabase");
-    return axios
-      .get(`/api/databases`)
-      .then(data => {
-        // console.log(JSON.parse(data.data.global_state))
-        return data.data;
-      })
-      .catch(err => {
-        console.log("Error loading: ", err);
-      });
+  const getDatabases = async () => {
+    const { data } = await axios.get(`/api/databases`);
+    return data;
   };
 
   return {

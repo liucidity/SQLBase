@@ -1,7 +1,7 @@
 const express = require("express");
-const router = express.Router();
 
 module.exports = ({ createTable, dropDB, seedTable, queryTable }) => {
+  const router = express.Router();
 
   router.put("/", (req, res) => {
     const schemaString = req.body.schemaString;

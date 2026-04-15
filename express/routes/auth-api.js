@@ -1,5 +1,4 @@
 const express = require("express");
-const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
@@ -12,6 +11,7 @@ const COOKIE_OPTIONS = {
 };
 
 module.exports = ({ queryDBParams }) => {
+  const router = express.Router();
   // POST /api/auth/register
   router.post("/register", async (req, res) => {
     const { email, password } = req.body;

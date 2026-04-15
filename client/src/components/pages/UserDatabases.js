@@ -9,6 +9,7 @@ import "./UserDatabases.scss";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import DownloadIcon from "@mui/icons-material/Download";
 import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
+import SuccessSnackbar from "../snackbars/SuccessSnackbar";
 
 const UserDatabases = () => {
   const { handleSchemaChange } = useSchemaState();
@@ -21,26 +22,44 @@ const UserDatabases = () => {
   } = useDatabase();
 
   const [list, setList] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", isError: false });
   const navigate = useNavigate();
+
+  const showSnackbar = (message, isError = false) =>
+    setSnackbar({ open: true, message, isError });
+  const closeSnackbar = () => setSnackbar(s => ({ ...s, open: false }));
 
   useEffect(() => {
     const fetchDatabaseList = async () => {
-      const databases = await getDatabases();
-      setList(databases);
+      try {
+        const databases = await getDatabases();
+        setList(databases);
+      } catch (err) {
+        showSnackbar(err?.response?.data?.error || "Failed to load databases.", true);
+      }
     };
     fetchDatabaseList();
   }, []);
 
-  const buttonHandler = (target, uuid, listIndex, databaseName) => {
+  const buttonHandler = async (target, uuid, listIndex, databaseName) => {
     if (target === "load") {
-      loadDatabase(uuid);
-      navigate("/tables");
+      try {
+        await loadDatabase(uuid);
+        navigate("/tables");
+      } catch (err) {
+        showSnackbar(err?.response?.data?.error || "Failed to load database.", true);
+      }
     }
     if (target === "delete") {
-      deleteDatabase(databaseName, uuid);
-      const newList = [...list];
-      newList.splice(listIndex, 1);
-      setList(newList);
+      try {
+        await deleteDatabase(databaseName, uuid);
+        const newList = [...list];
+        newList.splice(listIndex, 1);
+        setList(newList);
+        showSnackbar(`"${databaseName}" deleted.`);
+      } catch (err) {
+        showSnackbar(err?.response?.data?.error || "Failed to delete database.", true);
+      }
     }
     if (target === "create") {
       createNewState();
@@ -102,6 +121,13 @@ const UserDatabases = () => {
           </div>
         </Container>
       </ThemeProvider>
+
+      <SuccessSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        isError={snackbar.isError}
+        handleClose={closeSnackbar}
+      />
     </main>
   );
 };
