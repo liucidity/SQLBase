@@ -5,6 +5,7 @@ export const schemaTableFields = {
   mod2: "",
   default: "",
   reference: "",
+  relationType: "one-to-many",
 };
 
 export const initialSchemaState = {

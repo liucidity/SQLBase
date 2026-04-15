@@ -1,8 +1,47 @@
-svg[id^="mermaid-"] { 
-  // min-height: 250px;
-  // max-height: 800px;
-  min-width: 250px; 
-  max-width: 500px; 
-  font-size: 24px; 
-  padding-top: 35%;
+/* ── ERD Viewport ───────────────────────────────────── */
+.erd-viewport {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  cursor: grab;
+  position: relative;
+  user-select: none;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+/* SVG fills the viewport; viewBox manipulation drives zoom/pan */
+.erd-svg-wrap {
+  width: 100%;
+  height: 100%;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.erd-hint {
+  position: absolute;
+  bottom: 6px;
+  right: 10px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.22);
+  font-family: 'Inter', system-ui, sans-serif;
+  pointer-events: none;
+  user-select: none;
+}
+
+.erd-error {
+  position: absolute;
+  bottom: 8px;
+  left: 12px;
+  color: #f38ba8;
+  font-size: 12px;
+  font-family: monospace;
+  margin: 0;
+  pointer-events: none;
 }

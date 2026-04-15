@@ -1,22 +1,97 @@
-import { React, useState } from "react";
-import { CopyBlock, monokai } from "react-code-blocks";
-import { Button, Box } from "@mui/material";
+import { React, useState, useRef, useCallback, useEffect } from "react";
+import { CopyBlock } from "react-code-blocks";
+import Editor from "react-simple-code-editor";
 import SchemaForm from "../forms/SchemaForm";
 import useSchemaState from "../../state/hooks/useSchemaState";
 import useDatabase from "../../state/hooks/useDatabase";
-import ERDModal from "../modal/ERDModal";
-import {
-  generateSQL,
-  generateReferenceObject,
-} from "../../helpers/schemaFormHelpers";
+import Mermaid from "../modal/Mermaid";
+import { generateSQL, generateReferenceObject } from "../../helpers/schemaFormHelpers";
 import SuccessSnackbar from "../snackbars/SuccessSnackbar";
-import "../forms/SchemaForm.scss";
 import EditableField from "../fields/EditableField";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
-import SaveIcon from "@mui/icons-material/Save";
-import LanIcon from "@mui/icons-material/Lan";
+import { sqlTheme } from "../../helpers/sqlTheme";
+import { highlightSQL } from "../../helpers/prismSql";
+import "../forms/SchemaForm.scss";
 
+// ── SQL → schema parser ────────────────────────────────────
+function parseSQLToSchema(sql) {
+  const tables = [];
+  const re = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?(\w+)\s*\(([\s\S]*?)\);/gi;
+  let m;
+  while ((m = re.exec(sql)) !== null) {
+    const tableName = m[1];
+    const body = m[2];
+    const lines = body.split('\n').map(l => l.trim()).filter(Boolean);
+    const fields = [];
+    for (const rawLine of lines) {
+      const line = rawLine.replace(/,\s*$/, '').trim();
+      if (!line) continue;
+      if (/^id\s+SERIAL\s+PRIMARY\s+KEY/i.test(line)) continue;
+      if (/^CONSTRAINT\b/i.test(line)) continue;
+      const nameMatch = line.match(/^(\w+)\s+(.*)/);
+      if (!nameMatch) continue;
+      const fieldName = nameMatch[1];
+      let rest = nameMatch[2].trim();
+      let dataType = '', varcharSize = '', reference = '';
+      const fkMatch = rest.match(/^INTEGER\s+REFERENCES\s+(\w+)\s*\([^)]*\)/i);
+      if (fkMatch) {
+        dataType = 'INT';
+        reference = fkMatch[1];
+        rest = rest.slice(fkMatch[0].length).trim();
+      } else {
+        const typeMatch = rest.match(/^(\w+)(?:\((\d+)\))?(.*)/i);
+        if (!typeMatch) continue;
+        dataType = typeMatch[1].toUpperCase();
+        varcharSize = typeMatch[2] || '';
+        rest = typeMatch[3] ? typeMatch[3].trim() : '';
+      }
+      const constraints = [];
+      if (/PRIMARY\s+KEY/i.test(rest)) constraints.push('PRIMARY KEY');
+      if (/NOT\s+NULL/i.test(rest)) constraints.push('NOT NULL');
+      if (/\bUNIQUE\b/i.test(rest)) constraints.push('UNIQUE');
+      const defaultMatch = rest.match(/DEFAULT\s+'?([^'\s,]+)'?/i);
+      fields.push({
+        fieldName, dataType, varcharSize,
+        mod1: constraints[0] || '', mod2: constraints[1] || '',
+        default: defaultMatch ? defaultMatch[1] : '', reference,
+      });
+    }
+    tables.push({ table: tableName, fields });
+  }
+  return tables;
+}
+
+const REL_NOTATION = {
+  'one-to-one':  '||--||',
+  'one-to-many': '||--o{',
+  'many-to-many': '}o--o{',
+};
+
+// ── Mermaid diagram generator ──────────────────────────────
+function generateMermaid(schemaState) {
+  if (!schemaState || schemaState.length === 0) return '';
+  const validTables = schemaState.filter(t => t.table && /^[A-Za-z_]\w*$/.test(t.table));
+  if (validTables.length === 0) return '';
+  let out = 'erDiagram\n';
+  const relations = [];
+  validTables.forEach(tbl => {
+    out += `  ${tbl.table} {\n`;
+    tbl.fields.forEach(f => {
+      const dtype = (f.dataType || 'TEXT').replace(/[^A-Za-z0-9_]/g, '');
+      const fname = (f.fieldName || '').replace(/[^a-zA-Z0-9_]/g, '_');
+      if (!dtype || !fname) return;
+      if (f.reference && /^[A-Za-z_]\w*$/.test(f.reference)) {
+        const notation = REL_NOTATION[f.relationType] || REL_NOTATION['one-to-many'];
+        relations.push(`  ${f.reference} ${notation} ${tbl.table} : " "`);
+      }
+      out += `    ${dtype} ${fname}\n`;
+    });
+    out += `  }\n`;
+  });
+  if (relations.length) out += relations.join('\n') + '\n';
+  return out;
+}
+
+// ── Component ──────────────────────────────────────────────
 const CreateSchemaPage = () => {
   const {
     state,
@@ -25,157 +100,226 @@ const CreateSchemaPage = () => {
     addSchemaField,
     removeSchemaField,
     handleSchemaChange,
+    setAllSchemaTables,
   } = useSchemaState();
 
-  const { saveProgress, loadProgress, createDatabase } = useDatabase();
+  const { saveProgress, saveProgressWithState, createDatabase } = useDatabase();
 
-  const [isNameFocused, setIsNamedFocused] = useState(false);
-  const [isOpen, setIsOpen] = useState({
-    modal: false,
-    copy: false,
-    save: false,
-    load: false,
-    create: false,
-    addTable: false,
-    message: null,
-  });
+  const [isNameFocused, setIsNameFocused] = useState(false);
+  const [expertMode, setExpertMode] = useState(false);
+  const [sqlText, setSqlText] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', isError: false });
+  const [erdVisible, setErdVisible] = useState(true);
+  const [erdHeight, setErdHeight] = useState(240);
+  const debounceRef = useRef(null);
+  const isDragging = useRef(false);
+  const dragStartY = useRef(0);
+  const dragStartH = useRef(0);
 
-  const buttonHandler = target => {
-    switch (target) {
-      case "modal":
-        setIsOpen({ modal: true });
-        break;
-      case "copy":
-        setIsOpen({ copy: true, message: "Copy Success!" });
-        copyHandler();
-        break;
-      case "save":
-        setIsOpen({ save: true, message: "Save Success!" });
-        saveProgress();
-        break;
-      case "createDB":
-        setIsOpen({ create: true, message: "Database Created!" });
-        let allStrings = generateSQL(state.schemaState);
-        createDatabase(allStrings.join(""));
-        break;
-      case "addTable":
-        setIsOpen({ addTable: true, message: "Table Added" });
-        addSchemaTable();
-        break;
-      default:
-        return false;
+  const onResizeMouseDown = useCallback((e) => {
+    e.preventDefault();
+    isDragging.current = true;
+    dragStartY.current = e.clientY;
+    dragStartH.current = erdHeight;
+  }, [erdHeight]);
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!isDragging.current) return;
+      const delta = dragStartY.current - e.clientY;
+      setErdHeight(h => Math.max(80, Math.min(560, dragStartH.current + delta)));
+    };
+    const onUp = () => { isDragging.current = false; };
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+    return () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+  }, []);
+
+  const showSnackbar = (msg, isError = false) =>
+    setSnackbar({ open: true, message: msg, isError });
+  const closeSnackbar = () => setSnackbar(s => ({ ...s, open: false }));
+
+  const allSQL = generateSQL(state.schemaState).join('\n\n');
+
+  // Live-update left panel while typing in expert mode
+  const handleSqlChange = useCallback((code) => {
+    setSqlText(code);
+    clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      const parsed = parseSQLToSchema(code);
+      if (parsed.length > 0) setAllSchemaTables(parsed);
+    }, 500);
+  }, [setAllSchemaTables]);
+
+  const handleExpertToggle = () => {
+    if (!expertMode) {
+      setSqlText(allSQL);
+    } else {
+      const parsed = parseSQLToSchema(sqlText);
+      if (parsed.length > 0) setAllSchemaTables(parsed);
+    }
+    setExpertMode(e => !e);
+  };
+
+  const handleCopy = () => {
+    const text = expertMode ? sqlText : allSQL;
+    navigator.clipboard.writeText(text).then(() => showSnackbar('Copied to clipboard!'));
+  };
+
+  const handleSave = async () => {
+    try {
+      if (expertMode) {
+        const parsed = parseSQLToSchema(sqlText);
+        const overrideState = {
+          ...state,
+          schemaState: parsed.length > 0 ? parsed : state.schemaState,
+        };
+        await saveProgressWithState(overrideState);
+      } else {
+        await saveProgress();
+      }
+      showSnackbar('Progress saved.');
+    } catch {
+      showSnackbar('Failed to save.', true);
     }
   };
 
-  const handleClose = () => isOpen && setIsOpen(false);
-  const handleEditableField = focused => setIsNamedFocused(focused);
-
-  const copyHandler = () => {
-    let allStrings = generateSQL(state.schemaState);
-    return navigator.clipboard.writeText(allStrings.join(""));
+  const handleCreate = async () => {
+    try {
+      const sql = expertMode ? sqlText : allSQL;
+      if (expertMode) {
+        const parsed = parseSQLToSchema(sqlText);
+        if (parsed.length > 0) setAllSchemaTables(parsed);
+      }
+      await createDatabase(sql);
+      showSnackbar('Database created!');
+    } catch (err) {
+      showSnackbar(err?.response?.data?.error || 'Failed to create database.', true);
+    }
   };
 
+  const erdChart = generateMermaid(state.schemaState);
+
   return (
-    <main onClick={handleClose}>
-      <div id="container">
-        <EditableField
-          focused={isNameFocused}
-          handleChange={handleSchemaChange}
-          focus={handleEditableField}
-          state={state}
-        />
-
-        {isOpen.modal && (
-          <ERDModal
-            open={isOpen}
-            table={state.schemaState}
-            onClick={handleClose}
+    <main className="split-canvas">
+      {/* ── Left Panel ─────────────────────────────── */}
+      <div className="split-left">
+        <div className="split-left-header">
+          <EditableField
+            focused={isNameFocused}
+            handleChange={handleSchemaChange}
+            focus={setIsNameFocused}
+            state={state}
           />
-        )}
-        {isOpen && !isOpen.modal && (
-          <SuccessSnackbar
-            open={isOpen}
-            table={state}
-            handleClose={handleClose}
-            message={isOpen.message}
-          />
-        )}
+        </div>
 
-        {state.schemaState.map((table, tableIndex) => (
-          <div id="row-container" key={`row-${tableIndex}`}>
-            <form>
-              <SchemaForm
-                key={`SchemaForm-${tableIndex}`}
-                table={table}
-                tableIndex={tableIndex}
-                handleChange={handleSchemaChange}
-                removeField={removeSchemaField}
-                addField={addSchemaField}
-                references={generateReferenceObject(state.schemaState, table)}
-                removeTable={removeSchemaTable}
-              />
-            </form>
-            <div className="schema-demo">
-              <CopyBlock
-                key={`CopyBlock-${tableIndex}`}
-                language="sql"
-                text={generateSQL(state.schemaState)[tableIndex]}
-                theme={monokai}
-                wrapLines={true}
-                codeBlock
-              />
-            </div>
-          </div>
-        ))}
+        <div className="tables-list">
+          {state.schemaState.map((table, tableIndex) => (
+            <SchemaForm
+              key={`table-${tableIndex}`}
+              table={table}
+              tableIndex={tableIndex}
+              handleChange={handleSchemaChange}
+              removeField={removeSchemaField}
+              addField={addSchemaField}
+              references={generateReferenceObject(state.schemaState, table)}
+              removeTable={removeSchemaTable}
+            />
+          ))}
 
-        <Box id="add-copy-buttons">
-          <Button
-            id="add-table"
-            variant="contained"
-            color="primary"
-            startIcon={<AddCircleIcon />}
-            onClick={() => buttonHandler("addTable")}
-          >
-            Add Table
-          </Button>
-          <Button
-            id="copy-all"
-            variant="outlined"
-            color="primary"
-            startIcon={<ContentCopyIcon />}
-            onClick={() => buttonHandler("copy")}
-          >
-            Copy All Schema
-          </Button>
-        </Box>
+          <button className="add-table-card" onClick={addSchemaTable}>
+            <span className="add-table-plus">+</span>
+            <span>Add Table</span>
+          </button>
+        </div>
       </div>
 
-      <Box id="schema-buttons">
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<LanIcon />}
-          onClick={() => buttonHandler("modal")}
+      {/* ── Right Panel ────────────────────────────── */}
+      <div className="split-right">
+        <div className="split-right-header">
+          <button className="expert-toggle-btn" onClick={handleExpertToggle}>
+            {expertMode ? '← Form' : '✎ Expert'}
+          </button>
+        </div>
+
+        <div className="sql-pane">
+          {expertMode ? (
+            <Editor
+              value={sqlText}
+              onValueChange={handleSqlChange}
+              highlight={highlightSQL}
+              padding={0}
+              className="prism-sql-editor"
+              textareaClassName="prism-sql-textarea"
+              preClassName="prism-sql-pre"
+              style={{
+                fontFamily: "'Courier New', Consolas, monospace",
+                fontSize: 13,
+                lineHeight: 1.6,
+                background: 'transparent',
+                color: '#cdd6f4',
+                minHeight: '100%',
+                width: '100%',
+              }}
+            />
+          ) : (
+            <CopyBlock
+              language="sql"
+              text={allSQL || '-- Add a table to see SQL'}
+              theme={sqlTheme}
+              wrapLines={true}
+              codeBlock
+            />
+          )}
+        </div>
+
+        <div
+          className="erd-resize-handle"
+          onMouseDown={onResizeMouseDown}
+          style={{
+            opacity: erdVisible ? 1 : 0,
+            pointerEvents: erdVisible ? 'auto' : 'none',
+            transition: 'opacity 0.25s ease',
+          }}
+        />
+        <div
+          className="erd-pane"
+          style={{
+            height: erdVisible ? erdHeight : 0,
+            opacity: erdVisible ? 1 : 0,
+            overflow: 'hidden',
+            transition: 'height 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.25s ease',
+          }}
         >
-          View ERD
-        </Button>
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<SaveIcon />}
-          onClick={() => buttonHandler("save")}
-        >
-          Save
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddCircleIcon />}
-          onClick={() => buttonHandler("createDB")}
-        >
-          Create
-        </Button>
-      </Box>
+          <div style={{ height: erdHeight, position: 'relative' }}>
+            <Mermaid chart={erdChart} />
+          </div>
+        </div>
+
+        <div className="right-panel-actions">
+          <button className="action-btn" onClick={handleCopy}>⎘ Copy Schema</button>
+          <button className="action-btn" onClick={handleSave}>↑ Save</button>
+          <button
+            className={`action-btn erd-toggle-btn${erdVisible ? ' active' : ''}`}
+            onClick={() => setErdVisible(v => !v)}
+          >
+            {erdVisible ? '⊟ Hide ERD' : '⊞ Show ERD'}
+          </button>
+          <button className="action-btn primary" onClick={handleCreate}>
+            Create Database
+          </button>
+        </div>
+      </div>
+
+      <SuccessSnackbar
+        open={snackbar.open}
+        message={snackbar.message}
+        isError={snackbar.isError}
+        handleClose={closeSnackbar}
+      />
     </main>
   );
 };
