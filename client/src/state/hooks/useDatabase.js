@@ -74,27 +74,9 @@ const useDatabase = () => {
   // saves progress, creates new pgsql database, and creates tables from schema string
   const createDatabase = async schemaString => {
     const globalStateString = state;
-    saveProgress();
-
-    console.log(globalStateString);
-    return axios
-      .all([
-        await axios.put(`/api/databases`, { globalStateString }),
-        // creates tables
-        await axios.put(`/api/virtualDatabases`, {
-          globalStateString,
-          schemaString,
-        }),
-      ])
-      .then(
-        axios.spread((createDBData, createTableData) => {
-          console.log("put createDB", createDBData);
-          console.log("put createTable", createTableData);
-        })
-      )
-      .catch(err => {
-        console.log("Error loading: ", err);
-      });
+    await saveProgress();
+    await axios.put(`/api/databases`, { globalStateString });
+    await axios.put(`/api/virtualDatabases`, { globalStateString, schemaString });
   };
 
   const deleteDatabase = async (databaseName, databaseUuid) => {

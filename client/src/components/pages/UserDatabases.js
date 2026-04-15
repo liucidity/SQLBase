@@ -64,8 +64,11 @@ const UserDatabases = () => {
           <div id="database-list">
             {list &&
               list.map((data, listIndex) => {
-                let uuid = JSON.parse(data.global_state).databaseUuid;
-                let databaseName = JSON.parse(data.global_state).databaseName;
+                let parsed;
+                try { parsed = JSON.parse(data.global_state); } catch { return null; }
+                if (!parsed) return null;
+                const uuid = parsed.databaseUuid;
+                const databaseName = parsed.databaseName;
                 return (
                   <div className="database-items" key={uuid}>
                     <div className="database-name">
