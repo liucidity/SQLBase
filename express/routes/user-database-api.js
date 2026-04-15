@@ -2,63 +2,43 @@ const express = require("express");
 const router = express.Router();
 
 module.exports = ({ createDB, dropDB, queryDBParams, queryDB }) => {
-
-  //creates db
+  // Create a new PostgreSQL database
   router.put("/", (req, res) => {
-    console.log(req.body)
     const globalStateString = req.body.globalStateString;
-    const originalDBName = globalStateString.databaseName
-    console.log(originalDBName)
-
-
-    // // const { Pool, Client } = require('pg')
-    // //globalSateString to create db
-    // const globalStateString = req.body.globalStateString;
-    // console.log(globalStateString)
-    // const user = req.body.userID;
-    // // const client = new Client({
-    // //   user: `${user}`,
-    // //   host: 'localhost',
-    // //   password: 'postgres',
-    // //   port: 5432
-    // // })
-
-    const dbName = originalDBName
+    if (!globalStateString || !globalStateString.databaseName) {
+      return res.status(400).json({ error: "globalStateString.databaseName is required." });
+    }
+    const dbName = globalStateString.databaseName;
     createDB(dbName)
-      .then(data => {
-        res.json(data);
-      })
-      .catch(err => {
-        res.status(500).json({ error: err.message });
-      });
-    //gets state from all databases that belong to user
-
-  })
-  router.get("/", (req, res) => {
-    queryDB(
-      `SELECT global_state FROM databases WHERE user_id = 1 ORDER BY updated_at DESC;`
-    )
-      .then(data => {
-        res.json(data);
-      })
-      .catch(err => {
-        res.status(500).json({ error: err.message });
-      });
+      .then(() => res.status(201).json({ message: `Database "${dbName}" created.` }))
+      .catch(err => res.status(500).json({ error: err.message }));
   });
 
+  // Get all databases for the authenticated user
+  // TODO (Phase B): replace with req.user.id once auth middleware is in place
+  router.get("/", (req, res) => {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized." });
+    }
+    queryDBParams(
+      `SELECT global_state FROM databases WHERE user_id = $1 ORDER BY updated_at DESC;`,
+      [userId]
+    )
+      .then(data => res.json(data))
+      .catch(err => res.status(500).json({ error: err.message }));
+  });
+
+  // Drop a PostgreSQL database
   router.post("/", (req, res) => {
-    const originalDBName = req.body.databaseName
-
-    dropDB(originalDBName)
-      .then(data => {
-        res.json(data);
-      })
-      .catch(err => {
-        console.log('vda', err.message)
-        res.status(500).json({ error: err.message });
-      });
-  })
-
+    const { databaseName } = req.body;
+    if (!databaseName) {
+      return res.status(400).json({ error: "databaseName is required." });
+    }
+    dropDB(databaseName)
+      .then(() => res.json({ message: `Database "${databaseName}" dropped.` }))
+      .catch(err => res.status(500).json({ error: err.message }));
+  });
 
   return router;
-}
+};

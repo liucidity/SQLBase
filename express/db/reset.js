@@ -1,58 +1,37 @@
-// load .env data into process.env
 require("dotenv").config();
 
-// other dependencies
 const fs = require("fs");
 const chalk = require("chalk");
-const Client = require("pg-native");
+const { Client } = require("pg");
 
-// PG connection setup
 const connectionString =
   process.env.DATABASE_URL ||
   `postgresql://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}?sslmode=disable`;
-const client = new Client();
 
-// Loads the schema files from db/schema
-const runSchemaFiles = function () {
-  console.log(chalk.cyan(`-> Loading Schema Files ...`));
-  const schemaFilenames = fs.readdirSync("./db/schema");
+const client = new Client({ connectionString });
 
-  for (const fn of schemaFilenames) {
-    const sql = fs.readFileSync(`./db/schema/${fn}`, "utf8");
+const runFiles = async (dir, label) => {
+  console.log(chalk.cyan(`-> Loading ${label} ...`));
+  const files = fs.readdirSync(dir).sort();
+  for (const fn of files) {
+    const sql = fs.readFileSync(`${dir}/${fn}`, "utf8");
     console.log(`\t-> Running ${chalk.green(fn)}`);
-    client.querySync(sql);
-  }
-};
-const runFunctionFiles = function () {
-  console.log(chalk.cyan(`-> Loading Function Files ...`));
-  const functionFilenames = fs.readdirSync("./db/functions");
-
-  for (const fn of functionFilenames) {
-    const sql = fs.readFileSync(`./db/functions/${fn}`, "utf8");
-    console.log(`\t-> Running ${chalk.green(fn)}`);
-    client.querySync(sql);
+    await client.query(sql);
   }
 };
 
-const runSeedFiles = function () {
-  console.log(chalk.cyan(`-> Loading Seeds ...`));
-  const schemaFilenames = fs.readdirSync("./db/seeds");
-
-  for (const fn of schemaFilenames) {
-    const sql = fs.readFileSync(`./db/seeds/${fn}`, "utf8");
-    console.log(`\t-> Running ${chalk.green(fn)}`);
-    client.querySync(sql);
+(async () => {
+  try {
+    console.log(`-> Connecting to PG ...`);
+    await client.connect();
+    await runFiles("./db/schema", "Schema Files");
+    await runFiles("./db/seeds", "Seeds");
+    await runFiles("./db/functions", "Function Files");
+    console.log(chalk.green("-> Done!"));
+  } catch (err) {
+    console.error(chalk.red(`Failed: ${err.message}`));
+    process.exit(1);
+  } finally {
+    await client.end();
   }
-};
-
-try {
-  console.log(`-> Connecting to PG using ${connectionString} ...`);
-  client.connectSync(connectionString);
-  runSchemaFiles();
-  runSeedFiles();
-  runFunctionFiles();
-  client.end();
-} catch (err) {
-  console.error(chalk.red(`Failed due to error: ${err}`));
-  client.end();
-}
+})();

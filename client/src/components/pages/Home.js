@@ -1,86 +1,130 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import "./Home.scss";
-import { React, useState } from "react";
-import { Paper, Container } from "@mui/material";
-import { ThemeProvider } from "@mui/material/styles";
-import { Button } from "@mui/material";
-import theme from "../../styles/theme/theme.js";
-import Banner from "../../styles/banner/Banner";
-import ProductFeature from "../../styles/product-feature/ProductFeature";
-import TargetUsers from "../../styles/product-feature/TargetUsers";
-import TestimonialCarousel from "../../styles/product-feature/TestimonialCarousel";
-import AboutUs from "../../styles/aboutus/AboutUs";
-import PageSplitter from "../../styles/components/PageSplitter";
-import KeyboardDoubleArrowUpIcon from '@mui/icons-material/KeyboardDoubleArrowUp';
+import TableChartIcon from "@mui/icons-material/TableChart";
+import DataArrayIcon from "@mui/icons-material/DataArray";
+import BarChartIcon from "@mui/icons-material/BarChart";
+
+const features = [
+  {
+    icon: <TableChartIcon />,
+    title: "Design your schema",
+    description:
+      "Build relational tables with a form-based editor. Set types, constraints, and foreign keys — no SQL required.",
+  },
+  {
+    icon: <DataArrayIcon />,
+    title: "Seed with real data",
+    description:
+      "Populate your database instantly with realistic fake data. Choose row counts and data types per column.",
+  },
+  {
+    icon: <BarChartIcon />,
+    title: "Query and visualize",
+    description:
+      "Run queries through a guided interface and render results as pie or bar charts in one click.",
+  },
+];
 
 const Home = () => {
+  const navigate = useNavigate();
 
-
-  const [visible, setVisible] = useState(false);
-
-  const toggleVisible = () => {
-    const scrolled = document.documentElement.scrollTop;
-    if (scrolled > 3000) {
-      setVisible(true)
-    }
-    else if (scrolled <= 3000) {
-      setVisible(false)
-    }
-  };
-
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  };
-  window.addEventListener('scroll', toggleVisible);
   return (
-    <ThemeProvider theme={theme}>
-      <Container maxWidth="false">
-        <Paper
-          elevation={12}
-          className="landing-paper"
-          sx={{
-            borderRadius: 4,
-            marginBottom: 4,
-            zIndex: 1,
-          }}
-        >
+    <div id="home">
+      {/* Hero */}
+      <section className="hero">
+        <div className="hero-content">
+          <div className="hero-badge">No-code database tooling</div>
+          <h1>
+            Build real databases
+            <br />
+            without writing SQL.
+          </h1>
+          <p className="hero-sub">
+            SQLBase gives you a visual interface to design schemas, spin up
+            PostgreSQL databases, seed them with data, and explore results —
+            all from your browser.
+          </p>
+          <div className="hero-actions">
+            <button className="btn-primary" onClick={() => navigate("/tables")}>
+              Get started
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => navigate("/user-databases")}
+            >
+              My databases
+            </button>
+          </div>
+        </div>
+        <div className="hero-visual">
+          <div className="code-preview">
+            <div className="code-line">
+              <span className="kw">CREATE TABLE</span>
+              <span className="id"> users </span>
+              <span className="op">(</span>
+            </div>
+            <div className="code-line indent">
+              <span className="col">id</span>
+              <span className="type"> SERIAL PRIMARY KEY</span>
+              <span className="op">,</span>
+            </div>
+            <div className="code-line indent">
+              <span className="col">email</span>
+              <span className="type"> VARCHAR(255)</span>
+              <span className="op"> NOT NULL,</span>
+            </div>
+            <div className="code-line indent">
+              <span className="col">created_at</span>
+              <span className="type"> TIMESTAMP</span>
+            </div>
+            <div className="code-line">
+              <span className="op">);</span>
+            </div>
+            <div className="code-line spacer" />
+            <div className="code-line">
+              <span className="kw">INSERT INTO</span>
+              <span className="id"> users </span>
+              <span className="op">(</span>
+              <span className="col">email</span>
+              <span className="op">)</span>
+            </div>
+            <div className="code-line">
+              <span className="kw">VALUES</span>
+              <span className="op"> (</span>
+              <span className="str">'alice@example.com'</span>
+              <span className="op">);</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          <Banner sx={{ scrollSnapAlign: 'center' }} />
+      {/* Features */}
+      <section className="features">
+        <h2>Everything in one place</h2>
+        <p className="features-sub">
+          From schema to query results — no context switching.
+        </p>
+        <div className="feature-cards">
+          {features.map((f) => (
+            <div className="feature-card" key={f.title}>
+              <div className="feature-icon">{f.icon}</div>
+              <h3>{f.title}</h3>
+              <p>{f.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-          <PageSplitter
-            className="page-splitter"
-            src="tealbanner-body.jpg"
-            alt="banner-split"
-
-          />
-          <ProductFeature sx={{ scrollSnapAlign: 'center' }} />
-          <PageSplitter src="body-teal.png" />
-          <TargetUsers sx={{ scrollSnapAlign: 'center' }} />
-          <PageSplitter src="teal-white.png" />
-          <TestimonialCarousel sx={{ scrollSnapAlign: 'center' }} />
-          <PageSplitter src="body-teal.png" />
-          <PageSplitter src="teal-white.png" />
-          <AboutUs sx={{ scrollSnapAlign: 'center' }} />
-          <PageSplitter src="body-teal.png" />
-          <Button >
-            <KeyboardDoubleArrowUpIcon sx={{
-              display: visible ? 'inline' : 'none',
-              position: 'fixed',
-              width: 80,
-              height: 80,
-              backgroundColor: '#31d0c6',
-              borderRadius: "50%",
-              right: 60,
-              bottom: 40,
-              zIndex: 10
-            }} onClick={scrollToTop} />
-          </Button>
-        </Paper>
-      </Container>
-
-    </ThemeProvider >
+      {/* CTA Footer */}
+      <section className="cta">
+        <h2>Ready to build?</h2>
+        <p>Create your first database in under a minute.</p>
+        <button className="btn-primary" onClick={() => navigate("/tables")}>
+          Get started
+        </button>
+      </section>
+    </div>
   );
 };
 

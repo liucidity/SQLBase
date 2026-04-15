@@ -4,13 +4,10 @@ const router = express.Router();
 module.exports = ({ createTable, dropDB, seedTable, queryTable }) => {
 
   router.put("/", (req, res) => {
-    const userID = req.body.userID;
     const schemaString = req.body.schemaString;
     const globalStateString = req.body.globalStateString;
     const originalDBName = globalStateString.databaseName;
-    // const schemaString = globalStateString.schemaString
-    // console.log('rsschemaString', schemaString)
-    createTable(originalDBName, userID, schemaString)
+    createTable(originalDBName, req.user.id, schemaString)
       .then(data => {
         // console.log(data)
         res.json(data);

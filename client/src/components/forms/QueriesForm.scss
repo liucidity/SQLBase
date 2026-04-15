@@ -1,157 +1,149 @@
+/* ─── Queries page layout ─────────────────────────── */
 main {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100vh;
-  width: 98%;
-  margin-left: 1%;
-  justify-content: space-between;
-  box-shadow: 0.2em 0 0.2em -4px gray, -0.2em 0 0.2em -4px gray;
+  padding: 32px;
+  background: var(--bg);
+  min-height: 100vh;
+
   #container {
-    margin: 0;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
+    gap: 20px;
     width: 100%;
+
     #row-container {
       display: flex;
       flex-direction: row;
-    form {
-      display: flex;
-      flex-direction: column;
-      width: 75%;
-      .query-table {
-        border-radius: 2em;
-        margin: 2%;
-        padding: 2%;
-        box-shadow: 0.2em 0.2em 0.2em gray;
-        background-color: rgb(240, 240, 240);
-        .field-inputs {
-          width: 100%;
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          // flex-wrap: wrap;
-          label {
-            margin-right: 1%;
-            white-space: nowrap;
-            align-self: center;
-          }
-          div {
-            margin-left: 0.5%;
-            margin-right: 0.5%;
-          }
-        }
-        .add-remove-button {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          button {
+      gap: 20px;
+      align-items: flex-start;
+
+      form {
+        flex: 3;
+        display: flex;
+        flex-direction: column;
+
+        .query-table {
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          background: #fff;
+          padding: 20px;
+          box-shadow: none;
+
+          .field-inputs {
             display: flex;
             flex-direction: row;
+            gap: 6px;
             align-items: center;
-            div {
-              margin-top: 0.2em;
+            flex-wrap: wrap;
+
+            label {
+              white-space: nowrap;
+              font-size: 13px;
+              color: var(--text-muted);
             }
-            svg {
-              margin-right: 0.4em;
+
+            div {
+              margin: 0;
             }
           }
+
+          .add-remove-button {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            margin-top: 12px;
+
+            button {
+              display: flex;
+              align-items: center;
+              gap: 4px;
+
+              div { margin-top: 0; }
+              svg { margin-right: 0; }
+            }
+          }
+        }
+      }
+
+      .query-demo {
+        flex: 2;
+        position: sticky;
+        top: 20px;
+        margin: 0;
+        width: auto;
+
+        div {
+          border-radius: var(--radius);
+          overflow: hidden;
+          padding: 0;
+          margin: 0;
+          height: auto;
         }
       }
     }
   }
 }
 
-  .query-demo {
-    margin-left: 1%;
-    margin-right: 1%;
-    height: 100%;
-    width: 20%;
-    border-radius: 2em;
-    margin-top: 3%;
-    div {
-      padding: 2%;
-      margin-top: 5%;
-      height: auto;
-    }
+/* ─── DB name title ───────────────────────────────── */
+#query-database-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+  height: auto;
+
+  p {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
   }
 }
 
-
+/* ─── Action bars ─────────────────────────────────── */
 #query-add-copy-buttons {
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  gap: 12px;
+  padding-top: 4px;
+
   button {
-    color: white;
-    font-weight: bold;
-    font-size: 1.1em;
-    box-shadow: 0 11px 32px -6px #7170a4;
-    display: flex;
-    flex-direction: row;
-    div {
-      font-weight: bold;
-      margin-left: 10%;
-      margin-top: 0.2em;
-    }
+    margin: 0 !important;
+    width: auto !important;
+    box-shadow: none !important;
+    div { margin-left: 6px; margin-top: 0; }
   }
 }
 
 #query-buttons {
-  width: 25%;
-  align-self: flex-end;
   display: flex;
   flex-direction: row;
-  justify-content: space-evenly;
-  align-items: flex-end;
-  padding-right: 4%;
-  margin-top: 3%;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 24px 0 8px;
+  width: 100%;
+  align-self: unset;
+
   button {
-    min-width: 30%;
-    color: white;
-    font-weight: bold;
-    font-size: 1.1em;
-    box-shadow: 0 11px 32px -6px #7170a4;
-    flex-direction: row;
-    display: flex;
-    justify-content: center;
-    div {
-      font-weight: bold;
-      margin-left: 2%;
-      margin-top: 0.2em;
+    min-width: unset;
+    box-shadow: none !important;
+    div { margin-left: 6px; margin-top: 0; }
+  }
+}
+
+/* ─── Responsive ──────────────────────────────────── */
+@media (max-width: 900px) {
+  main {
+    padding: 16px;
+
+    #container #row-container {
+      flex-direction: column;
+
+      form { flex: unset; width: 100%; }
+      .query-demo { flex: unset; width: 100%; position: static; }
     }
   }
-}
 
-#tables-bottom {
-  width: 100%;
-  opacity: 0.5;
-}
-
-#query-database-title {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  height: 100px;
-  p {
-    // padding-top: 2%;
-    font-size: 2em;
-    font-weight: bold;
-    color: white;
+  #query-buttons {
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
-  div {
-    font-size: 1.5em;
-    font-weight: bold;
-    color: white;
-
-  }
-}
-
-#queries-add-table {
-  width: 25%;
-}
-
-#queries-copy-all {
-  width: 15%;
 }

@@ -3,29 +3,55 @@ import ReactDOM from "react-dom";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 import Layout from "./components/routes/Layout";
+import ProtectedRoute from "./components/routes/ProtectedRoute";
 import Home from "./components/pages/Home";
+import Login from "./components/pages/Login";
+import Register from "./components/pages/Register";
 import CreateSchemaPage from "./components/pages/CreateSchema";
 import CreateQueriesPage from "./components/pages/CreateQueries";
 import CreateSeedsPage from "./components/pages/CreateSeeds";
-import GlobalProvider from "./state/GlobalStateProvider";
-import UserDatabases from "./components/pages/UserDatabases";
 import CreateChartsPage from "./components/pages/CreateCharts";
+import UserDatabases from "./components/pages/UserDatabases";
+import GlobalProvider from "./state/GlobalStateProvider";
+import { AuthProvider } from "./state/AuthProvider";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <GlobalProvider>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="tables" element={<CreateSchemaPage />} />
-            <Route path="queries" element={<CreateQueriesPage />} />
-            <Route path="user-databases" element={<UserDatabases />} />
-            <Route path="seeds" element={<CreateSeedsPage />} />
-            <Route path="charts" element={<CreateChartsPage />} />
-          </Route>
-        </Routes>
-      </GlobalProvider>
+      <AuthProvider>
+        <GlobalProvider>
+          <Routes>
+            {/* Auth pages — no sidebar */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* App shell with sidebar */}
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route
+                path="user-databases"
+                element={<ProtectedRoute><UserDatabases /></ProtectedRoute>}
+              />
+              <Route
+                path="tables"
+                element={<ProtectedRoute><CreateSchemaPage /></ProtectedRoute>}
+              />
+              <Route
+                path="seeds"
+                element={<ProtectedRoute><CreateSeedsPage /></ProtectedRoute>}
+              />
+              <Route
+                path="queries"
+                element={<ProtectedRoute><CreateQueriesPage /></ProtectedRoute>}
+              />
+              <Route
+                path="charts"
+                element={<ProtectedRoute><CreateChartsPage /></ProtectedRoute>}
+              />
+            </Route>
+          </Routes>
+        </GlobalProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

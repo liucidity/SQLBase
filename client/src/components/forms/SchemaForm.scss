@@ -1,159 +1,130 @@
+/* ─── Schema page layout ──────────────────────────── */
 main {
-  // display: flex;
-  // flex-direction: column;
-  // align-items: center;
-  // height: 100vh;
-  width: 98%;
-  margin-top:0px;
-  margin-left: 1%;
-  background: linear-gradient(180deg, rgba(84,131,161,1) 0%, rgba(255,255,255,1) 91%);
-    // justify-content: space-between;
-  box-shadow: 0.2em 0 0.2em -4px gray, -0.2em 0 0.2em -4px gray;
+  padding: 32px;
+  background: var(--bg);
+
   #container {
-    padding-top: 0em;
-    margin: 0;
     display: flex;
     flex-direction: column;
-    justify-content: space-evenly;
-    width: 100%;
+    gap: 20px;
+
     #row-container {
       display: flex;
       flex-direction: row;
-    form {
-      display: flex;
-      flex-direction: column;
-      width: 60%;
-      .schema-table {
-        border-radius: 2em;
-        margin: 2%;
-        padding: 2%;
-        box-shadow: 0.2em 0.2em 0.2em gray;
-        background-color: rgb(240, 240, 240);
-        .field-inputs {
-          width: 100%;
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          label {
-            margin-right: 1%;
-            white-space: nowrap;
-            align-self: center;
+      gap: 20px;
+      align-items: flex-start;
+
+      form {
+        flex: 3;
+        display: flex;
+        flex-direction: column;
+
+        .schema-table {
+          border: 1px solid var(--border);
+          border-radius: var(--radius);
+          background: #fff;
+          padding: 20px;
+          box-shadow: none;
+
+          .field-inputs {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+
+            label {
+              white-space: nowrap;
+              font-size: 13px;
+              color: var(--text-muted);
+            }
+          }
+
+          .add-remove-button {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            margin-top: 12px;
           }
         }
-        .add-remove-button {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
+      }
+
+      .schema-demo {
+        flex: 2;
+        position: sticky;
+        top: 20px;
+        margin: 0;
+        width: auto;
+
+        div {
+          border-radius: var(--radius);
+          overflow: hidden;
+          padding: 0;
+          margin: 0;
+          height: auto;
         }
       }
     }
   }
 }
 
-  .schema-demo {
-    margin-left: 1%;
-    margin-right: 1%;
-    height: 100%;
-    width: 40%;
-    border-radius: 2em;
-    div {
-      padding: 2%;
-      margin-top: 5%;
-      height: auto;
-    }
-  }
-}
-
-
-#add-table {
-  // margin-top: 3%;
-  width: 30%;
-  color: #fff;
-  font-size: 1.1em;
-  padding-left: 10%;
-  padding-right: 10%;
-  margin-left: 10%;
-  text-align: center;
-}
-#copy-all {
-  // margin-top: 3%;
-  width: 30%;
-  color: white;
-  font-weight: bold;
-  font-size: 1.1em;
-  padding-left: 10%;
-  padding-right: 10%;
-  margin-left: 15%;
-}
-#schema-buttons {
-  width: 30%;
-  align-self: flex-end;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-around;
-  align-items: flex-end;
-  padding-right: 4%;
-  margin-top: 3%;
-  button {
-    min-width: 30%;
-    color: white;
-    font-weight: bold;
-    font-size: 1.1em;
-    box-shadow: 0 11px 32px -6px #7170a4;
-    display: flex;
-    flex-direction: row;
-    div {
-      font-weight: bold;
-      margin-left: 15%;
-      margin-top: 0.2em;
-    }
-  }
-}
-
-#schema-database-title {
-  display: flex;
-  flex-direction: row;
-  justify-content: center;
-  height: 60px;
-  margin-top: 1%;
-  p {
-    // padding-top: 2%;
-    font-size: 2em;
-    font-weight: bold;
-    color: white;
-  }
-  div {
-    font-size: 1.2em;
-    font-weight: bold;
-    color: black;
-
-
-  }
-}
-
-#tables-bottom {
-  position:relative;
-  bottom:0%;
-  width: 100%;
-  opacity: 0.5;
-}
-
+/* ─── Action bars ─────────────────────────────────── */
 #add-copy-buttons {
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+#schema-buttons {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  justify-content: flex-end;
+  padding: 24px 0 8px;
+
   button {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    div {
-      font-weight: bold;
-      margin-left: 4%;
-      margin-top: 0.2em;
-    }
+    min-width: unset;
+    box-shadow: none !important;
+    div { margin-left: 6px; margin-top: 0; }
   }
 }
 
-.css-9ddj71-MuiInputBase-root-MuiOutlinedInput-root {
-  background-color: white;
+/* ─── DB name title ───────────────────────────────── */
+#schema-database-title {
+  display: flex;
+  align-items: center;
+  margin-bottom: 4px;
+
+  .MuiTypography-root,
+  p {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+}
+
+/* ─── Responsive ──────────────────────────────────── */
+@media (max-width: 900px) {
+  main {
+    padding: 16px;
+
+    #container #row-container {
+      flex-direction: column;
+
+      form { width: 100%; flex: unset; }
+
+      .schema-demo {
+        width: 100%;
+        flex: unset;
+        position: static;
+      }
+    }
+  }
+
+  #schema-buttons {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
 }

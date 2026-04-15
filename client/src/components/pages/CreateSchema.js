@@ -5,13 +5,10 @@ import SchemaForm from "../forms/SchemaForm";
 import useSchemaState from "../../state/hooks/useSchemaState";
 import useDatabase from "../../state/hooks/useDatabase";
 import ERDModal from "../modal/ERDModal";
-import { generateSeedSQL } from "../../helpers/seedFormHelpers";
 import {
   generateSQL,
   generateReferenceObject,
 } from "../../helpers/schemaFormHelpers";
-
-import PageSplitter from "../../styles/components/PageSplitter";
 import SuccessSnackbar from "../snackbars/SuccessSnackbar";
 import "../forms/SchemaForm.scss";
 import EditableField from "../fields/EditableField";
@@ -30,8 +27,7 @@ const CreateSchemaPage = () => {
     handleSchemaChange,
   } = useSchemaState();
 
-  const { saveProgress, loadProgress, createDatabase, seedDatabase } =
-    useDatabase();
+  const { saveProgress, loadProgress, createDatabase } = useDatabase();
 
   const [isNameFocused, setIsNamedFocused] = useState(false);
   const [isOpen, setIsOpen] = useState({
@@ -43,6 +39,7 @@ const CreateSchemaPage = () => {
     addTable: false,
     message: null,
   });
+
   const buttonHandler = target => {
     switch (target) {
       case "modal":
@@ -57,7 +54,7 @@ const CreateSchemaPage = () => {
         saveProgress();
         break;
       case "createDB":
-        setIsOpen({ create: true, message: "Database Created!" })
+        setIsOpen({ create: true, message: "Database Created!" });
         let allStrings = generateSQL(state.schemaState);
         createDatabase(allStrings.join(""));
         break;
@@ -68,14 +65,13 @@ const CreateSchemaPage = () => {
       default:
         return false;
     }
-    console.log("openState", isOpen);
   };
+
   const handleClose = () => isOpen && setIsOpen(false);
   const handleEditableField = focused => setIsNamedFocused(focused);
 
   const copyHandler = () => {
     let allStrings = generateSQL(state.schemaState);
-
     return navigator.clipboard.writeText(allStrings.join(""));
   };
 
@@ -88,6 +84,7 @@ const CreateSchemaPage = () => {
           focus={handleEditableField}
           state={state}
         />
+
         {isOpen.modal && (
           <ERDModal
             open={isOpen}
@@ -104,98 +101,81 @@ const CreateSchemaPage = () => {
           />
         )}
 
-        {state.schemaState.map((table, tableIndex) => {
-          return (
-            <div id="row-container">
-              <form>
-                <SchemaForm
-                  key={`SchemaForm - ${tableIndex}`}
-                  table={table}
-                  tableIndex={tableIndex}
-                  handleChange={handleSchemaChange}
-                  removeField={removeSchemaField}
-                  addField={addSchemaField}
-                  references={generateReferenceObject(state.schemaState, table)}
-                  removeTable={removeSchemaTable}
-                />
-              </form>
-              <div className="schema-demo">
-                <CopyBlock
-                  key={`CopyBlock-${tableIndex}`}
-                  language="sql"
-                  text={generateSQL(state.schemaState)[tableIndex]}
-                  theme={monokai}
-                  wrapLines={true}
-                  codeBlock
-                />
-              </div>
+        {state.schemaState.map((table, tableIndex) => (
+          <div id="row-container" key={`row-${tableIndex}`}>
+            <form>
+              <SchemaForm
+                key={`SchemaForm-${tableIndex}`}
+                table={table}
+                tableIndex={tableIndex}
+                handleChange={handleSchemaChange}
+                removeField={removeSchemaField}
+                addField={addSchemaField}
+                references={generateReferenceObject(state.schemaState, table)}
+                removeTable={removeSchemaTable}
+              />
+            </form>
+            <div className="schema-demo">
+              <CopyBlock
+                key={`CopyBlock-${tableIndex}`}
+                language="sql"
+                text={generateSQL(state.schemaState)[tableIndex]}
+                theme={monokai}
+                wrapLines={true}
+                codeBlock
+              />
             </div>
-          );
-        })}
+          </div>
+        ))}
 
         <Box id="add-copy-buttons">
           <Button
             id="add-table"
-            primary="true"
-            onClick={() => buttonHandler("addTable")}
             variant="contained"
-            sx={{
-              backgroundColor: "#4a748f",
-              ":hover": { backgroundColor: "#588bab" },
-            }}
+            color="primary"
+            startIcon={<AddCircleIcon />}
+            onClick={() => buttonHandler("addTable")}
           >
-            <AddCircleIcon /> <div>Add Table</div>
+            Add Table
           </Button>
           <Button
             id="copy-all"
-            variant="contained"
-            sx={{
-              backgroundColor: "#4a748f",
-              ":hover": { backgroundColor: "#588bab" },
-            }}
-            primary="true"
+            variant="outlined"
+            color="primary"
+            startIcon={<ContentCopyIcon />}
             onClick={() => buttonHandler("copy")}
           >
-            <ContentCopyIcon /> <div>Copy All Schema</div>
+            Copy All Schema
           </Button>
         </Box>
       </div>
+
       <Box id="schema-buttons">
         <Button
-          variant="contained"
-          sx={{
-            backgroundColor: "#4a748f",
-            ":hover": { backgroundColor: "#588bab" },
-          }}
-          primary="true"
+          variant="outlined"
+          color="primary"
+          startIcon={<LanIcon />}
           onClick={() => buttonHandler("modal")}
         >
-          <LanIcon /> <div> View ERD</div>
+          View ERD
         </Button>
         <Button
-          variant="contained"
-          sx={{
-            backgroundColor: "#4a748f",
-            ":hover": { backgroundColor: "#588bab" },
-          }}
-          primary="true"
+          variant="outlined"
+          color="primary"
+          startIcon={<SaveIcon />}
           onClick={() => buttonHandler("save")}
         >
-          <SaveIcon /> <div>Save</div>
+          Save
         </Button>
         <Button
           variant="contained"
-          sx={{
-            backgroundColor: "#4a748f",
-            ":hover": { backgroundColor: "#588bab" },
-          }}
-          primary="true"
+          color="primary"
+          startIcon={<AddCircleIcon />}
           onClick={() => buttonHandler("createDB")}
         >
-          <AddCircleIcon /> <div> Create</div>
+          Create
         </Button>
       </Box>
-      <PageSplitter src="body-teal.png" id="tables-bottom" />
     </main>
   );
 };

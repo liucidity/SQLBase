@@ -9,7 +9,6 @@ import SeedsForm from "../forms/SeedsForm";
 import SeedsModal from "../modal/SeedsModal";
 import { CopyBlock, monokai } from "react-code-blocks";
 import { generateSeedSQL } from "../../helpers/seedFormHelpers";
-import PageSplitter from "../../styles/components/PageSplitter";
 import SaveIcon from "@mui/icons-material/Save";
 import DownloadIcon from "@mui/icons-material/Download";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
@@ -20,20 +19,13 @@ const CreateSeedsPage = () => {
   const { saveProgress, loadProgress, seedDatabase } = useDatabase();
 
   const tableNameList = getTableNames();
-
   const table = state.schemaState;
   const seeds = state.seedState;
   let seedString = generateSeedSQL(seeds);
 
-  const [isOpen, setIsOpen] = useState({
-    modal: false,
-    table: null,
-  });
+  const [isOpen, setIsOpen] = useState({ modal: false, table: null });
 
-  const buttonHandler = table => {
-    setIsOpen({ modal: true, table: table });
-  };
-
+  const buttonHandler = table => setIsOpen({ modal: true, table });
   const handleClose = () => isOpen && setIsOpen(false);
 
   return (
@@ -47,11 +39,12 @@ const CreateSeedsPage = () => {
           seeds={seeds}
         />
       )}
+
       <div id="seedsContainer">
         <form id="seedsForm">
-          <label id="seedsFormTitle">Seeds Databse</label>
+          <label id="seedsFormTitle">Seed Database</label>
           <SeedsForm
-            key={`SeedsForm`}
+            key="SeedsForm"
             tableNameList={tableNameList}
             numRowsDropdown={numRowsDropdown}
             table={table}
@@ -61,7 +54,7 @@ const CreateSeedsPage = () => {
         </form>
         <div id="seedsDemo">
           <CopyBlock
-            key={`CopyBlock-seeds`}
+            key="CopyBlock-seeds"
             language="sql"
             text={generateSeedSQL(seeds)}
             theme={monokai}
@@ -70,23 +63,35 @@ const CreateSeedsPage = () => {
           />
         </div>
       </div>
+
       <Box id="seeds-buttons">
         <Button
-          primary="true"
+          variant="contained"
+          color="primary"
+          startIcon={<AutoFixHighIcon />}
           onClick={() => seedDatabase(state.databaseName, seedString)}
-          variant="contained" sx={{ backgroundColor: '#4a748f', ":hover": { backgroundColor: "#588bab" } }}
         >
-          <AutoFixHighIcon /> <div>  Seed </div>
+          Seed
         </Button>
-        <Button primary="true" variant="contained" sx={{ backgroundColor: '#4a748f', ":hover": { backgroundColor: "#588bab" } }} onClick={() => saveProgress()}>
-          <SaveIcon />  <div>Save</div>
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<SaveIcon />}
+          onClick={() => saveProgress()}
+        >
+          Save
         </Button>
-        <Button primary="true" variant="contained" sx={{ backgroundColor: '#4a748f', ":hover": { backgroundColor: "#588bab" } }} onClick={() => loadProgress()}>
-          <DownloadIcon /> <div> Load </div>
+        <Button
+          variant="outlined"
+          color="primary"
+          startIcon={<DownloadIcon />}
+          onClick={() => loadProgress()}
+        >
+          Load
         </Button>
       </Box>
-      <PageSplitter src="body-teal.png" id="seeds-tables-bottom" />
     </main>
   );
 };
+
 export default CreateSeedsPage;

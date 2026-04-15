@@ -5,7 +5,6 @@ import useSchemaState from "../../state/hooks/useSchemaState";
 import useSeedState from "../../state/hooks/useSeedState";
 import PieChartCard from "../charts/pie-chart/PieChartCard";
 import BarChartCard from "../charts/bar-chart/BarChartCard";
-import PageSplitter from "../../styles/components/PageSplitter";
 import { deepCopy } from "../../helpers/schemaFormHelpers";
 import {
   initialPieChartData,
@@ -27,10 +26,6 @@ const CreateChartsPage = () => {
   const { state } = useSchemaState();
   let tableList = getTableNames();
   let allTables = state.schemaState;
-
-  /**
-   * PIE CHART STATE
-   */
 
   const [pieIndexes, setPieIndexes] = useState({
     tableIndex: 0,
@@ -64,10 +59,6 @@ const CreateChartsPage = () => {
   );
   const [pieChartData, setPieChartData] = useState(initialPieChartData);
 
-  /**
-   * BAR CHART STATE
-   */
-
   const [barIndexes, setBarIndexes] = useState({
     tableIndex: 0,
     colIndex: 1,
@@ -85,10 +76,6 @@ const CreateChartsPage = () => {
   );
   const [barChartData, setBarChartData] = useState(initialBarChartData);
 
-  /**
-   * PIE CHART SETTERS
-   */
-
   useEffect(() => {
     setPieColList(prev => getColumnList(allTables[pieIndexes.tableIndex]));
     setPieValList(prev =>
@@ -100,11 +87,9 @@ const CreateChartsPage = () => {
     setPieRelTableList(prev =>
       getRelTableList(String(tableList[pieIndexes.tableIndex].value))
     );
-    setPieRelColList(prev => {
-      return getRelColList(
-        String(pieRelTableList[pieIndexes.relTableIndex].value)
-      );
-    });
+    setPieRelColList(prev =>
+      getRelColList(String(pieRelTableList[pieIndexes.relTableIndex].value))
+    );
     setPieRelValList(prev =>
       getAllPieValues(
         String(pieRelTableList[pieIndexes.relTableIndex].value),
@@ -120,18 +105,12 @@ const CreateChartsPage = () => {
     pieIndexes.valIndex,
   ]);
 
-  /**
-   * BAR CHART SETTERS
-   */
-
   useEffect(() => {
     setBarColList(prev => getColumnList(allTables[barIndexes.tableIndex]));
     setBarChartData(prev =>
       yearsGenerator([5, 7, 9][Math.floor(Math.random() * 3)])
     );
   }, [barIndexes.colIndex, barIndexes.tableIndex, barIndexes.valIndex]);
-
-  /**  USE CALLBACK (PIE CHART) */
 
   const generatePieData = useCallback(() => {
     setPieChartData(prev =>
@@ -146,8 +125,6 @@ const CreateChartsPage = () => {
   useEffect(() => {
     generatePieData(pieChartData, pieRelValList);
   }, [generatePieData]);
-
-  /** COMMON */
 
   const selectHandler = (chart, list, index, event) => {
     if (chart === "pie") {
@@ -180,7 +157,6 @@ const CreateChartsPage = () => {
           selectHandler={selectHandler}
           chartData={pieChartData}
         />
-
         <BarChartCard
           tableList={tableList}
           columnList={barColList}
@@ -191,44 +167,8 @@ const CreateChartsPage = () => {
           chartData={barChartData}
         />
       </div>
-      <PageSplitter src="body-teal.png" id="tables-bottom" />
     </main>
   );
 };
 
 export default CreateChartsPage;
-
-/**
-    NOTE: There is no need to modify global state, all chart fucntionality is "READ ONLY" (unless we want to save their charts)
-
-    Chart UI
-    -------
-      (✘ )  create a card per chart (render 2 or 4 charts on the page)
-      (✓)  create dependent dropdowns (schema state -> tables list -> col list -> val list)
-      (✓)  create a dynamic chart title based on the user's selected table / col
-      (✓) create a dynamic dropdown box for selecting the "UNIQUE" seeded values for the table
-          (ie: for companies, 'NIKE', 'TESLA', etc)
-
-    Chart Data Prep
-    ---------------
-      (✘ ) create 2-3 "pre-built scenarios" per chart, and a "matcher" object that contains their associated categories.
-      (✘ ) handleChange function for dropdowns will determine if the user has selected a combination that matches a pre-built scenario
-      (-O-) inside the "useChartState" hook, design reducer functions that get the required data for each scenario from global "seedState".
-      (✘ ) place the reducer functions inside the matcher object as key/values, that fire when the user hits that specific scenario.
-
-------------------------
-| SCENARIOS - PIE CHART |
-------------------------
-
-    `companies` table is selected, AND
-    ---------
-      (✘ )  Column is `num_employees`:  pie chart shows the age distribution of the selected company.
-      (✘ )  Column is `
-      (✘ )
-
-      `employees` table is selected, AND
-    ---------
-      (✓)  Column is `fav_drink`:  pie chart shows the age distribution of the selected company.
-      (✓)
-      (✓)
-*/

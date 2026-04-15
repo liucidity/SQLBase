@@ -4,6 +4,9 @@ import axios from "axios";
 
 import { LOAD_DB_TO_STATE, CREATE_NEW_STATE } from "../reducers/globalReducer";
 
+// Send cookies with every request
+axios.defaults.withCredentials = true;
+
 const useDatabase = () => {
   const [state, dispatch] = useContext(GlobalContext);
 
@@ -24,14 +27,12 @@ const useDatabase = () => {
     const globalStateString = JSON.stringify(state);
     const databaseName = state.databaseName;
     const databaseUuid = state.databaseUuid;
-    const userID = 1;
     return axios
       .post(`/api/tables`, {
-        userID,
         databaseName,
         globalStateString,
         databaseUuid,
-      }) // add ${id} to route if we have multiple users
+      })
       .then(data => console.log("Save successful: ", data));
   };
   // unused: loads last created state into state
@@ -75,7 +76,6 @@ const useDatabase = () => {
     const globalStateString = state;
     saveProgress();
 
-    const userID = 1;
     console.log(globalStateString);
     return axios
       .all([
@@ -83,7 +83,6 @@ const useDatabase = () => {
         // creates tables
         await axios.put(`/api/virtualDatabases`, {
           globalStateString,
-          userID,
           schemaString,
         }),
       ])
@@ -101,8 +100,8 @@ const useDatabase = () => {
   const deleteDatabase = async (databaseName, databaseUuid) => {
     return axios
       .all([
-        await axios.post(`api/databases`, { databaseName }),
-        await axios.delete(`api/tables`, { params: { databaseUuid } }),
+        await axios.post(`/api/databases`, { databaseName }),
+        await axios.delete(`/api/tables`, { params: { databaseUuid } }),
       ])
       .then(
         axios.spread((dropDBData, removeStateData) => {

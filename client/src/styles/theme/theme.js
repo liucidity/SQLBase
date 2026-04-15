@@ -1,64 +1,57 @@
 import { createTheme } from "@mui/material";
-import { light } from "@mui/material/styles/createPalette";
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#5482a1',
+      main: '#6366f1',
+      dark: '#4f46e5',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#7776a3',
+      main: '#6b7280',
     },
-    white: '#fff',
-    black: '#000'
+    error: {
+      main: '#ef4444',
+      dark: '#dc2626',
+    },
   },
   typography: {
     fontFamily: [
+      'Inter',
       'Oxygen',
+      'system-ui',
       'sans-serif',
-      'Roboto'
-
     ].join(','),
-
   },
-
-
-  transitions: {
-    duration: {
-      shortest: 150,
-      shorter: 200,
-      short: 250,
-      // most basic recommended timing
-      standard: 900,
-      // this is to be used in complex animations
-      complex: 375,
-      // recommended when something is entering screen
-      enteringScreen: 225,
-      // recommended when something is leaving screen
-      leavingScreen: 195,
+  shape: {
+    borderRadius: 8,
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+          fontWeight: 500,
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: 'none',
+          },
+        },
+        containedPrimary: {
+          '&:hover': {
+            backgroundColor: '#4f46e5',
+          },
+        },
+      },
     },
-    easing: {
-      // This is the most common easing curve.
-      easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
-      // Objects enter the screen at full velocity from off-screen and
-      // slowly decelerate to a resting point.
-      easeOut: 'cubic-bezier(0.0, 0, 0.2, 1)',
-      // Objects leave the screen at full velocity. They do not decelerate when off-screen.
-      easeIn: 'cubic-bezier(0.4, 0, 1, 1)',
-      // The sharp curve is used by objects that may return to the screen at any time.
-      sharp: 'cubic-bezier(0.4, 0, 0.6, 1)',
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#ffffff',
+        },
+      },
     },
-  }
+  },
 });
-
-// Theme.typography.h3 = {
-//   fontSize: '1.2rem',
-//   '@media (min-width:600px)': {
-//     fontSize: '1.5rem',
-//   },
-//   [Theme.breakpoints.up('md')]: {
-//     fontSize: '2rem',
-//   },
-// };
 
 export default theme;
