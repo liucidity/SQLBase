@@ -8,6 +8,7 @@ import {
   SCHEMA_REMOVE_FIELD,
   SCHEMA_HANDLE_CHANGE,
   SCHEMA_SET_ALL_TABLES,
+  SCHEMA_DUPLICATE_TABLE,
 } from "../reducers/globalReducer";
 
 const useSchemaState = () => {
@@ -34,6 +35,9 @@ const useSchemaState = () => {
   const setAllSchemaTables = tables =>
     dispatch({ type: SCHEMA_SET_ALL_TABLES, tables });
 
+  const duplicateSchemaTable = tableIndex =>
+    dispatch({ type: SCHEMA_DUPLICATE_TABLE, tableIndex });
+
   return {
     state,
     addSchemaTable,
@@ -42,6 +46,7 @@ const useSchemaState = () => {
     removeSchemaField,
     handleSchemaChange,
     setAllSchemaTables,
+    duplicateSchemaTable,
   };
 };
 

@@ -20,6 +20,24 @@ main.split-canvas {
   background: var(--bg);
 }
 
+/* Variant used in Seeds: inner content scrolls, footer button stays pinned */
+.split-left.pinned-footer {
+  overflow: hidden;
+  padding: 0;
+
+  .split-left-header {
+    padding: 28px 24px 0;
+    flex-shrink: 0;
+  }
+
+  .tables-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 24px 0;
+    min-height: 0;
+  }
+}
+
 .split-right {
   flex: 2;
   display: flex;
@@ -31,11 +49,17 @@ main.split-canvas {
 
 .split-left-header {
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 
   .split-db-name {
     font-size: 14px;
     font-weight: 700;
     color: var(--text);
+    flex: 1;
+    min-width: 0;
   }
 }
 
@@ -74,6 +98,44 @@ main.split-canvas {
     color: #a5b4fc;
     border-color: rgba(99,102,241,0.4);
   }
+
+  &.active {
+    background: rgba(99,102,241,0.2);
+    color: #a5b4fc;
+    border-color: rgba(99,102,241,0.4);
+  }
+}
+
+/* ── Expert mode ─────────────────────────────────────── */
+.expert-mode-banner {
+  padding: 7px 18px;
+  background: rgba(99,102,241,0.08);
+  border-bottom: 1px solid rgba(99,102,241,0.18);
+  font-size: 11px;
+  color: #a5b4fc;
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+.expert-sql-textarea {
+  flex: 1;
+  width: 100%;
+  padding: 16px;
+  background: transparent;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #cdd6f4;
+  caret-color: #89dceb;
+  box-sizing: border-box;
+  min-height: 0;
+
+  &::placeholder {
+    color: rgba(205,214,244,0.25);
+  }
 }
 
 /* ERD toggle lives in the bottom action list; .action-btn handles base styles */
@@ -91,14 +153,54 @@ main.split-canvas {
 .sql-pane {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   min-height: 0;
 
-  > div, pre {
+  > div, pre, code {
     background: transparent !important;
     font-size: 13px !important;
     line-height: 1.6 !important;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
   }
+}
+
+/* ── Shared scrollable body for Queries / Seeds right panel ── */
+.split-right-body {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.sql-panel {
+  padding: 16px;
+  flex-shrink: 0;
+  overflow-x: hidden;
+
+  > div, pre, code {
+    background: transparent !important;
+    font-size: 13px !important;
+    line-height: 1.6 !important;
+    word-break: break-all;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+  }
+}
+
+/* ── Schema-only warning banner ─────────────────────── */
+.schema-only-banner {
+  width: 100%;
+  padding: 6px 12px;
+  background: #fef9c3;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: #854d0e;
+  font-weight: 500;
 }
 
 .erd-resize-handle {
@@ -174,6 +276,109 @@ main.split-canvas {
     &:hover {
       background: var(--accent-hover);
       border-color: var(--accent-hover);
+    }
+  }
+}
+
+.csv-import-btn,
+.template-picker-btn {
+  font-size: 12px;
+  padding: 6px 11px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.action-btn.active {
+  background: rgba(99, 102, 241, 0.18);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+// ── Template picker ──────────────────────────────────────────
+.template-picker-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.template-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #1e1e2e;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  z-index: 200;
+  min-width: 240px;
+  overflow: hidden;
+}
+
+.template-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+
+  &:hover {
+    background: rgba(255,255,255,0.06);
+  }
+
+  .template-icon {
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+
+  .template-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .template-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e5e7eb;
+    font-family: inherit;
+  }
+
+  .template-desc {
+    font-size: 11px;
+    color: #6b7280;
+    font-family: inherit;
+  }
+}
+
+// ── Table menu ───────────────────────────────────────────────
+.table-menu-item {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: #9ca3af;
+  font-family: inherit;
+  transition: background 0.12s, color 0.12s;
+
+  &:hover {
+    background: rgba(255,255,255,0.06);
+    color: #e5e7eb;
+  }
+
+  &.danger {
+    color: #f87171;
+
+    &:hover {
+      background: rgba(248,113,113,0.1);
+      color: #f87171;
     }
   }
 }
@@ -315,22 +520,6 @@ main.split-canvas {
   overflow: hidden;
 }
 
-.table-menu-item {
-  display: block;
-  width: 100%;
-  padding: 10px 16px;
-  background: none;
-  border: none;
-  text-align: left;
-  font-size: 13px;
-  cursor: pointer;
-  color: var(--text);
-  transition: background 0.1s;
-
-  &:hover { background: var(--surface); }
-  &.danger { color: var(--danger); }
-  &.danger:hover { background: #fee2e2; }
-}
 
 /* ═══════════════════════════════════════════════════
    FIELDS

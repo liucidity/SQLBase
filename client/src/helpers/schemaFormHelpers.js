@@ -4,7 +4,7 @@ const generateSQL = tables => {
   let result = [];
   tables.forEach(table => {
     const lines = [
-      `CREATE TABLE ${table.table} (`,
+      `CREATE TABLE IF NOT EXISTS ${table.table} (`,
       `    id SERIAL PRIMARY KEY NOT NULL`,
     ];
     table.fields.forEach(field => {
@@ -21,7 +21,7 @@ const generateSQL = tables => {
       if (field.default) parts.push(`DEFAULT '${field.default}'`);
       lines.push(`    ${parts.join(' ')}`);
     });
-    result.push(lines.join(',\n') + '\n);\n');
+    result.push(lines[0] + '\n' + lines.slice(1).join(',\n') + '\n);\n');
   });
   return result;
 };

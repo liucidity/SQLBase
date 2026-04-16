@@ -1,38 +1,23 @@
 require("dotenv").config();
 
-module.exports = ({ createClientFromState }) => {
+module.exports = ({ getPool, releasePool }) => {
 
   const createTable = async (databaseName, userID, schemaString) => {
-    const newClient = createClientFromState(databaseName);
-    try {
-      await newClient.connect();
-      const result = await newClient.query(schemaString);
-      return result;
-    } finally {
-      await newClient.end().catch(() => {});
-    }
+    const pool = getPool(databaseName);
+    const result = await pool.query(schemaString);
+    return result;
   };
 
   const seedTable = async (databaseName, seedString) => {
-    const newClient = createClientFromState(databaseName);
-    try {
-      await newClient.connect();
-      const result = await newClient.query(seedString);
-      return result;
-    } finally {
-      await newClient.end().catch(() => {});
-    }
+    const pool = getPool(databaseName);
+    const result = await pool.query(seedString);
+    return result;
   };
 
   const queryTable = async (databaseName, queryString) => {
-    const newClient = createClientFromState(databaseName);
-    try {
-      await newClient.connect();
-      const result = await newClient.query(queryString);
-      return result;
-    } finally {
-      await newClient.end().catch(() => {});
-    }
+    const pool = getPool(databaseName);
+    const result = await pool.query(queryString);
+    return result;
   };
 
   return { createTable, seedTable, queryTable };

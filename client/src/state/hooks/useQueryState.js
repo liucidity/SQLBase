@@ -6,6 +6,9 @@ import {
   INSERT_QUERY_TABLE,
   SET_QUERY_PARAMS,
   QUERY_REMOVE_TABLE,
+  LOAD_QUERY_STATE,
+  QUERY_SET_TABLE,
+  QUERY_CLEAR_TABLE,
 } from "../reducers/globalReducer";
 
 const useQueryState = () => {
@@ -20,18 +23,12 @@ const useQueryState = () => {
     dispatch({ type: QUERY_REMOVE_TABLE, tableIndex });
   };
 
-  const selectTableHandler = (event, queryIndex) => {
-    const tableName = event.target.value;
-    const queryName = event.target.value;
-    dispatch(
-      { type: INSERT_QUERY_TABLE, tableName },
-      dispatch({
-        type: SET_QUERY_PARAMS,
-        queryName,
-        queryIndex,
-        queryType: "name",
-      })
-    );
+  const selectTableHandler = (tableName, queryIndex) => {
+    dispatch({ type: QUERY_SET_TABLE, tableName, queryIndex });
+  };
+
+  const clearQueryTable = (queryIndex) => {
+    dispatch({ type: QUERY_CLEAR_TABLE, queryIndex });
   };
 
   const setQueryParams = (event, queryIndex, queryType, fieldIndex) => {
@@ -39,12 +36,18 @@ const useQueryState = () => {
     dispatch({ type: SET_QUERY_PARAMS, queryName, queryIndex, queryType, fieldIndex });
   };
 
+  const loadQueryState = (queryState) => {
+    dispatch({ type: LOAD_QUERY_STATE, queryState });
+  };
+
   return {
     state,
     addQueryTable,
     removeQueryTable,
     selectTableHandler,
+    clearQueryTable,
     setQueryParams,
+    loadQueryState,
   };
 };
 

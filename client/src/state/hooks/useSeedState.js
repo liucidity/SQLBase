@@ -1,264 +1,76 @@
 import { useContext } from "react";
 import { GlobalContext } from "../GlobalStateProvider";
 
-import {
-  randNumber,
-  randFloat,
-  randUser,
-  randJobTitle,
-  randJobArea,
-  randSkill,
-  randDrinks,
-  randCity,
-  randCountry,
-  randBrand,
-  randFullName,
-  randProduct,
-  randWord,
-} from "@ngneat/falso";
+import { randNumber } from "@ngneat/falso";
 
-import { SEED_ALL_FAKE_DATA, SEED_FAKE_DATA } from "../reducers/globalReducer";
+import { SEED_ALL_FAKE_DATA, SEED_FAKE_DATA, SET_SEED_FIELD_CONFIG } from "../reducers/globalReducer";
+import { SEED_CATEGORIES, inferSeedType } from "../../helpers/seedTypeHelpers";
+import { topoSortTables } from "../../helpers/seedFormHelpers";
 
 const useSeedState = () => {
   const [state, dispatch] = useContext(GlobalContext);
 
-  /**
-   * FAKE DATA HELPER FUNCTIONS: goals are (1) generate DB seed string to seed database, (2) store in global state?
-   * @param {string} colName the column name inside the tables
-   * @param {integer} numDataPoints the number of data points to create
-   * @returns an array of objects (1 array/table) containing the seed data
-   */
-
-  /**
-   * COMPANIES (name, # of employees, # of products, # of countries, CEO, head office location)
-   */
-
-  const companySeed = numDataPoints => {
-    const companies = [];
-    for (let i = 0; i < numDataPoints; i++) {
-      let num_employees = randNumber({ min: 20, max: 100000 });
-      let num_products = randNumber({ min: 1, max: 1000 });
-      let annual_revenue =
-        Math.round(
-          (num_employees *
-            num_products *
-            randFloat({ min: 1, max: 2, fraction: 2 })) /
-            1000
-        ) * 1000;
-      let annual_expenditures =
-        annual_revenue +
-        annual_revenue * (0.9 * randFloat({ min: -1, max: 0.2, fraction: 2 }));
-      let total_assets =
-        annual_revenue +
-        annual_revenue * (1.1 * randFloat({ min: 0, max: 1, fraction: 2 }));
-
-      companies.push({
-        uid: i + 1,
-        name: randBrand(),
-        ceo: randFullName(),
-        num_employees,
-        num_products,
-        annual_revenue,
-        annual_expenditures,
-        total_assets,
-        num_countries: randNumber({ min: 1, max: 200 }),
-        head_office: `${randCity()}, ${randCountry()}`,
-      });
-    }
-
-    return companies;
-  };
-
-  const yearsGenerator = numYears => {
-    let years = [];
-    let total_assets = [];
-    for (let i = 0; i < numYears; i++) {
-      let num_employees = randNumber({ min: 20, max: 100000 });
-      let num_products = randNumber({ min: 1, max: 1000 });
-      let annual_revenue =
-        Math.round(
-          (num_employees *
-            num_products *
-            randFloat({ min: 1, max: 1.2, fraction: 2 })) /
-            1000
-        ) * 1000;
-      let annual_expenditures =
-        Math.round(
-          (annual_revenue +
-            annual_revenue *
-              (0.9 * randFloat({ min: -1, max: 0.2, fraction: 2 }))) /
-            1000
-        ) * 1000;
-      if (i === 0) {
-        total_assets.push(
-          Math.round(
-            (annual_revenue +
-              annual_revenue *
-                (1.1 * randFloat({ min: 0, max: 0.5, fraction: 2 }))) /
-              1000
-          ) * 1000
-        );
-      } else {
-        total_assets.push(
-          Math.round(
-            (total_assets[i - 1] +
-              total_assets[i - 1] *
-                (0.5 * randFloat({ min: -1, max: 1, fraction: 2 }))) /
-              1000
-          ) * 1000
-        );
-      }
-
-      let year = {
-        year: 2022 - numYears + i,
-        annual_expenditures,
-        annual_revenue,
-        total_assets: total_assets[i],
-      };
-      years.push(year);
-    }
-    return years;
-  };
-
-  /**
-   * EMPLOYEES
-   */
-
-  const getNumCompanies = () => state.seedState[0].companies.length;
-
-  const employeeSeed = numDataPoints => {
-    const employees = [];
-    for (let i = 0; i < numDataPoints; i++) {
-      let employee = randUser();
-      let age = randNumber({ min: 20, max: 70 });
-      let years_exp = randNumber({ min: 0, max: age - 20 });
-      let salary =
-        Math.round(
-          (30000 +
-            years_exp * 5000 * randFloat({ min: 1, max: 2, fraction: 2 })) /
-            1000
-        ) * 1000;
-      let address = `${employee.address.street}, ${employee.address.city}, ${employee.address.country}`;
-      let first_name = employee.firstName;
-      let last_name = employee.lastName;
-      ["address", "img", "id", "username", "firstName", "lastName"].forEach(
-        i => delete employee[i]
-      );
-
-      employees.push({
-        ...employee,
-        company_id: randNumber({
-          min: 1,
-          max: getNumCompanies(),
-        }),
-        first_name,
-        last_name,
-        address,
-        job_title: randJobTitle(),
-        department: randJobArea(),
-        age,
-        years_exp,
-        salary,
-        office: `${randCity()}, ${randCountry()}`,
-        strength: randSkill(),
-        fav_drink: randDrinks(),
-      });
-    }
-    return employees;
-  };
-
-  /**
-   * PRODUCTS (name, description, price, status, level (subscription plan), product_line, ...[look at falso library])
-   */
-
-  const productSeed = numDataPoints => {
-    const products = [];
-    for (let i = 0; i < numDataPoints; i++) {
-      let product = randProduct();
-      let name = product.title;
-      let sku = product.id;
-      let rating = Number(product.rating.rate);
-      let rating_count = randNumber({ min: 20, max: 1000 });
-      let msrp = Math.round(randNumber({ min: 20, max: 1000 }) / 5) * 5;
-      let cost = randFloat({ min: 5, max: msrp - msrp * 0.1, fraction: 2 });
-      let profit_margin = ((msrp - cost) / cost) * 100;
-
-      ["id", "title", "price", "image", "rating", "rating_count"].forEach(
-        i => delete product[i]
-      );
-
-      products.push({
-        ...product,
-        manufacturer: randBrand(),
-        name,
-        sku,
-        msrp,
-        cost,
-        profit_margin,
-        rating,
-        rating_count,
-      });
-    }
-
-    return products;
-  };
-
-  const genericSeed = (tableName, numDataPoints) => {
+  const genericSeed = (tableName, numDataPoints, seedStateOverride = null) => {
     const tableSchema = state.schemaState.find(t => t.table === tableName);
     const fields = tableSchema ? tableSchema.fields : [];
+    const fieldConfig = (state.seedFieldConfig || {})[tableName] || {};
+    const currentSeedState = seedStateOverride || state.seedState[0] || {};
     const rows = [];
+
     for (let i = 0; i < numDataPoints; i++) {
       const row = {};
       fields.forEach(field => {
-        const dt = (field.dataType || "").toUpperCase();
-        if (dt.includes("INT")) {
-          row[field.fieldName] = randNumber({ min: 1, max: 1000 });
-        } else if (dt.includes("FLOAT") || dt.includes("DECIMAL") || dt.includes("NUMERIC")) {
-          row[field.fieldName] = randFloat({ min: 0, max: 1000, fraction: 2 });
-        } else if (dt.includes("BOOL")) {
-          row[field.fieldName] = Math.random() > 0.5;
-        } else if (dt.includes("DATE") || dt.includes("TIME")) {
-          row[field.fieldName] = new Date(Date.now() - Math.random() * 1e11)
-            .toISOString()
-            .split("T")[0];
-        } else {
-          row[field.fieldName] = randWord();
+        // FK field: pick a random ID from the parent table's seeded row count
+        if (field.reference) {
+          const parentRows = currentSeedState[field.reference];
+          const parentCount = Array.isArray(parentRows) && parentRows.length > 0
+            ? parentRows.length
+            : 100; // fallback if parent not yet seeded
+          row[field.fieldName] = randNumber({ min: 1, max: parentCount });
+          return;
         }
+
+        const override = fieldConfig[field.fieldName];
+        const seedType = override?.seedType ?? inferSeedType(field.fieldName, field.dataType);
+        const category = SEED_CATEGORIES[seedType] || SEED_CATEGORIES.word;
+        const opts = { min: override?.min, max: override?.max };
+        row[field.fieldName] = category.generate(opts);
       });
       rows.push(row);
     }
     return rows;
   };
 
-  const tableToSeedFn = {
-    companies: companySeed,
-    employees: employeeSeed,
-    products: productSeed,
+  const setSeedFieldConfig = (tableName, fieldName, seedType, min, max) => {
+    dispatch({ type: SET_SEED_FIELD_CONFIG, tableName, fieldName, seedType, min, max });
   };
 
   const generateAllSeedState = seedFormData => {
     const seedState = {};
-    seedFormData.forEach(table => {
-      const seedFn = tableToSeedFn[table[0]] || (n => genericSeed(table[0], n));
-      seedState[table[0]] = seedFn(table[1]);
+    const tableNames = seedFormData.map(t => t[0]);
+    const sortedNames = topoSortTables(tableNames, state.schemaState);
+
+    const dataMap = Object.fromEntries(seedFormData.map(t => [t[0], t[1]]));
+
+    sortedNames.forEach(tableName => {
+      const numDataPoints = dataMap[tableName];
+      if (numDataPoints === undefined) return;
+      seedState[tableName] = genericSeed(tableName, numDataPoints, seedState);
     });
+
     dispatch({ type: SEED_ALL_FAKE_DATA, seedState });
   };
 
   const generateSeedState = (tableName, numDataPoints) => {
-    const seedFn = tableToSeedFn[tableName] || (n => genericSeed(tableName, n));
-    const seedData = seedFn(numDataPoints);
+    const seedData = genericSeed(tableName, numDataPoints);
     dispatch({ type: SEED_FAKE_DATA, seedData, tableName });
   };
 
   return {
     state,
-    companySeed,
-    employeeSeed,
-    productSeed,
     generateAllSeedState,
     generateSeedState,
-    yearsGenerator,
+    setSeedFieldConfig,
   };
 };
 

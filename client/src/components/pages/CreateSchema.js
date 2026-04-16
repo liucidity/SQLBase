@@ -1,4 +1,4 @@
-import { React, useState, useRef, useCallback, useEffect } from "react";
+import { React, useState, useRef, useCallback, useEffect, useContext } from "react";
 import { CopyBlock } from "react-code-blocks";
 import Editor from "react-simple-code-editor";
 import SchemaForm from "../forms/SchemaForm";
@@ -10,6 +10,11 @@ import SuccessSnackbar from "../snackbars/SuccessSnackbar";
 import EditableField from "../fields/EditableField";
 import { sqlTheme } from "../../helpers/sqlTheme";
 import { highlightSQL } from "../../helpers/prismSql";
+import { parseCSVFile } from "../../helpers/csvImportHelpers";
+import { GlobalContext } from "../../state/GlobalStateProvider";
+import { CSV_IMPORT_TABLE } from "../../state/reducers/globalReducer";
+import { SCHEMA_TEMPLATES } from "../../helpers/schemaTemplates";
+import { format as formatSQL } from "sql-formatter";
 import "../forms/SchemaForm.scss";
 
 // ── SQL → schema parser ────────────────────────────────────
@@ -145,20 +150,51 @@ const CreateSchemaPage = () => {
     removeSchemaField,
     handleSchemaChange,
     setAllSchemaTables,
+    duplicateSchemaTable,
   } = useSchemaState();
 
-  const { saveProgress, saveProgressWithState, createDatabase } = useDatabase();
+  const [, dispatch] = useContext(GlobalContext);
+  const csvInputRef = useRef(null);
+
+  const { saveProgress, saveProgressWithState, createDatabase, getDatabases } = useDatabase();
 
   const [isNameFocused, setIsNameFocused] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
+  const [existingDbNames, setExistingDbNames] = useState([]);
   const [sqlText, setSqlText] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', isError: false });
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const templateRef = useRef(null);
+  const [sqlFormatted, setSqlFormatted] = useState(false);
   const [erdVisible, setErdVisible] = useState(true);
   const [erdHeight, setErdHeight] = useState(240);
   const debounceRef = useRef(null);
   const isDragging = useRef(false);
   const dragStartY = useRef(0);
   const dragStartH = useRef(0);
+
+  // Load existing database names for duplicate detection
+  useEffect(() => {
+    getDatabases()
+      .then(data => {
+        const names = data
+          .map(item => { try { return JSON.parse(item.global_state); } catch { return null; } })
+          .filter(db => db && db.databaseName)
+          .map(db => db.databaseName);
+        setExistingDbNames(names);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Close template picker on outside click
+  useEffect(() => {
+    const handler = e => {
+      if (templateRef.current && !templateRef.current.contains(e.target))
+        setTemplateOpen(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const onResizeMouseDown = useCallback((e) => {
     e.preventDefault();
@@ -187,6 +223,9 @@ const CreateSchemaPage = () => {
   const closeSnackbar = () => setSnackbar(s => ({ ...s, open: false }));
 
   const allSQL = generateSQL(state.schemaState).join('\n\n');
+  const displaySQL = sqlFormatted
+    ? (() => { try { return formatSQL(allSQL, { language: 'postgresql' }); } catch { return allSQL; } })()
+    : allSQL;
 
   // Live-update left panel while typing in expert mode
   const handleSqlChange = useCallback((code) => {
@@ -209,11 +248,22 @@ const CreateSchemaPage = () => {
   };
 
   const handleCopy = () => {
-    const text = expertMode ? sqlText : allSQL;
+    const text = expertMode ? sqlText : displaySQL;
     navigator.clipboard.writeText(text).then(() => showSnackbar('Copied to clipboard!'));
   };
 
+  const handleLoadTemplate = (tmpl) => {
+    setAllSchemaTables(tmpl.tables);
+    setTemplateOpen(false);
+    setSqlFormatted(false);
+    showSnackbar(`Loaded "${tmpl.label}" template.`);
+  };
+
   const handleSave = async () => {
+    if (state.databaseName === 'database_name') {
+      showSnackbar('Rename the database before saving — "database_name" is the default placeholder.', true);
+      return;
+    }
     try {
       if (expertMode) {
         const parsed = parseSQLToSchema(sqlText);
@@ -231,7 +281,31 @@ const CreateSchemaPage = () => {
     }
   };
 
+  const handleCSVImport = async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    e.target.value = ""; // reset so same file can be re-imported
+    try {
+      const { schemaTable, seedRows } = await parseCSVFile(file);
+      dispatch({ type: CSV_IMPORT_TABLE, schemaTable, seedRows });
+      showSnackbar(`Imported "${schemaTable.table}" — ${seedRows.length} rows ready to seed.`);
+    } catch (err) {
+      showSnackbar(err.message || "Failed to import CSV.", true);
+    }
+  };
+
   const handleCreate = async () => {
+    if (state.databaseName === 'database_name') {
+      showSnackbar('Rename the database before creating — "database_name" is the default placeholder.', true);
+      return;
+    }
+    const isDuplicate = existingDbNames.some(
+      n => n === state.databaseName && !state.dbCreated
+    );
+    if (isDuplicate) {
+      showSnackbar(`A database named "${state.databaseName}" already exists. Choose a different name.`, true);
+      return;
+    }
     try {
       const sql = expertMode ? sqlText : allSQL;
       if (expertMode) {
@@ -240,6 +314,8 @@ const CreateSchemaPage = () => {
       }
       await createDatabase(sql);
       showSnackbar('Database created!');
+      // Refresh name list so future creates detect this name as taken
+      setExistingDbNames(prev => [...prev, state.databaseName]);
     } catch (err) {
       showSnackbar(err?.response?.data?.error || 'Failed to create database.', true);
     }
@@ -258,6 +334,46 @@ const CreateSchemaPage = () => {
             focus={setIsNameFocused}
             state={state}
           />
+          <input
+            ref={csvInputRef}
+            type="file"
+            accept=".csv"
+            style={{ display: "none" }}
+            onChange={handleCSVImport}
+          />
+          <button
+            className="action-btn csv-import-btn"
+            onClick={() => csvInputRef.current?.click()}
+            title="Import a CSV file to generate a table schema and seed data"
+          >
+            ↑ Import CSV
+          </button>
+          <div className="template-picker-wrap" ref={templateRef}>
+            <button
+              className="action-btn template-picker-btn"
+              onClick={() => setTemplateOpen(o => !o)}
+              title="Load a schema template"
+            >
+              ⬡ Templates
+            </button>
+            {templateOpen && (
+              <div className="template-dropdown">
+                {SCHEMA_TEMPLATES.map(tmpl => (
+                  <button
+                    key={tmpl.id}
+                    className="template-option"
+                    onClick={() => handleLoadTemplate(tmpl)}
+                  >
+                    <span className="template-icon">{tmpl.icon}</span>
+                    <div className="template-text">
+                      <span className="template-label">{tmpl.label}</span>
+                      <span className="template-desc">{tmpl.description}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="tables-list">
@@ -271,6 +387,7 @@ const CreateSchemaPage = () => {
               addField={addSchemaField}
               references={generateReferenceObject(state.schemaState, table)}
               removeTable={removeSchemaTable}
+              duplicateTable={duplicateSchemaTable}
             />
           ))}
 
@@ -312,7 +429,7 @@ const CreateSchemaPage = () => {
           ) : (
             <CopyBlock
               language="sql"
-              text={allSQL || '-- Add a table to see SQL'}
+              text={displaySQL || '-- Add a table to see SQL'}
               theme={sqlTheme}
               wrapLines={true}
               codeBlock
@@ -345,6 +462,15 @@ const CreateSchemaPage = () => {
 
         <div className="right-panel-actions">
           <button className="action-btn" onClick={handleCopy}>⎘ Copy Schema</button>
+          {!expertMode && (
+            <button
+              className={`action-btn${sqlFormatted ? ' active' : ''}`}
+              onClick={() => setSqlFormatted(v => !v)}
+              title="Toggle SQL formatting"
+            >
+              ⌥ Format SQL
+            </button>
+          )}
           <button className="action-btn" onClick={handleSave}>↑ Save</button>
           <button
             className={`action-btn erd-toggle-btn${erdVisible ? ' active' : ''}`}
@@ -352,7 +478,21 @@ const CreateSchemaPage = () => {
           >
             {erdVisible ? '⊟ Hide ERD' : '⊞ Show ERD'}
           </button>
-          <button className="action-btn primary" onClick={handleCreate}>
+          <button
+            className="action-btn primary"
+            onClick={handleCreate}
+            disabled={
+              !/^[a-z0-9_]{1,63}$/.test(state.databaseName) ||
+              state.databaseName === 'database_name'
+            }
+            title={
+              state.databaseName === 'database_name'
+                ? 'Rename the database before creating'
+                : !/^[a-z0-9_]{1,63}$/.test(state.databaseName)
+                  ? 'Fix the database name before creating'
+                  : undefined
+            }
+          >
             Create Database
           </button>
         </div>

@@ -2,7 +2,20 @@
 .seeds-config-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+}
+
+/* ─── Table card (wraps row + expandable fields) ────── */
+.seed-table-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 0.15s;
+  background: #fff;
+
+  &:hover, &.expanded {
+    border-color: #c7d2fe;
+  }
 }
 
 /* ─── Seed table row ───────────────────────────────── */
@@ -12,13 +25,6 @@
   gap: 12px;
   padding: 12px 16px;
   background: #fff;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  transition: border-color 0.15s;
-
-  &:hover {
-    border-color: #c7d2fe;
-  }
 
   .seed-table-name {
     font-size: 14px;
@@ -65,7 +71,7 @@
     flex-shrink: 0;
   }
 
-  .seed-preview-btn {
+  .seed-configure-btn, .seed-preview-btn {
     padding: 5px 12px;
     border: 1px solid var(--border);
     border-radius: 6px;
@@ -84,6 +90,136 @@
   }
 }
 
+/* ─── Field config panel ───────────────────────────── */
+.seed-fields-panel {
+  border-top: 1px solid var(--border);
+  background: var(--surface, #f8f9ff);
+  padding: 8px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.seed-fields-header {
+  display: grid;
+  grid-template-columns: 140px 90px 1fr 160px;
+  gap: 8px;
+  padding: 4px 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.seed-field-row {
+  display: grid;
+  grid-template-columns: 140px 90px 1fr 160px;
+  gap: 8px;
+  align-items: center;
+  padding: 6px;
+  border-radius: 6px;
+  transition: background 0.1s;
+
+  &:hover {
+    background: #eef0ff;
+  }
+}
+
+.seed-field-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seed-field-datatype {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: monospace;
+  background: #e8eaf6;
+  border-radius: 4px;
+  padding: 2px 6px;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.seed-field-type-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.seed-inferred-badge {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.seed-type-select {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: var(--accent);
+  }
+}
+
+.seed-range-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.seed-range-input {
+  width: 64px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  text-align: center;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: var(--accent);
+  }
+
+  -moz-appearance: textfield;
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+  }
+}
+
+.seed-range-sep {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
 /* ─── Empty state ──────────────────────────────────── */
 .seed-empty {
   padding: 24px 0;
@@ -92,9 +228,10 @@
   font-style: italic;
 }
 
-/* ─── Seed all button ──────────────────────────────── */
+/* ─── Seed all button — sticky at bottom of left panel ── */
 .seed-all-btn {
-  width: 100%;
+  width: calc(100% - 48px);
+  margin: 0 24px 24px;
   padding: 12px;
   background: var(--accent);
   border: none;
@@ -104,7 +241,7 @@
   color: #fff;
   cursor: pointer;
   transition: background 0.15s;
-  margin-top: 4px;
+  flex-shrink: 0;
 
   &:hover:not(:disabled) {
     background: var(--accent-hover);

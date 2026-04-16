@@ -35,21 +35,31 @@ const generateFirstLine = (table, columns, distinct = false, aggregate, aggregat
   return `SELECT${distinct ? ' DISTINCT' : ''} ${generateColumns(aggregate, aggregateAs, columns, having, orderBy, order).columnString} FROM ${table}`
 };
 
-const generateWhere = (condition) => {
-  let whereString = 'WHERE ';
-  if (condition.length < 2) {
-    whereString += `${condition[0]}`
-  } else {
-    condition.forEach(con => {
-      if (condition.indexOf(con) !== condition.length - 1) {
-        whereString += `${con ? con + ' AND ' : ""}`
-      } else {
-        whereString += `${con}`
-      }
-    })
-  }
-  return whereString
-}
+const NO_VALUE_OPS = ['IS NULL', 'IS NOT NULL', 'IS TRUE', 'IS FALSE'];
+
+const isNumericType = (dataType) => {
+  if (!dataType) return false;
+  const dt = dataType.toLowerCase();
+  return ['int', 'numeric', 'float', 'decimal', 'double', 'real', 'bigint', 'smallint'].some(t => dt.includes(t));
+};
+
+const conditionToSQL = (cond) => {
+  if (typeof cond === 'string') return cond;
+  const { column, dataType, operator, value } = cond;
+  if (!column || !operator) return null;
+  if (NO_VALUE_OPS.includes(operator)) return `${column} ${operator}`;
+  const numeric = isNumericType(dataType) && !isNaN(value) && value !== '';
+  const quotedVal = numeric ? value : `'${value}'`;
+  return `${column} ${operator} ${quotedVal}`;
+};
+
+const generateWhere = (conditions) => {
+  const parts = conditions
+    .map(c => conditionToSQL(c))
+    .filter(s => s && s.trim());
+  if (parts.length === 0) return '';
+  return `WHERE ${parts.join(' AND ')}`;
+};
 
 const generateLimit = limit => {
   return (limit === 1000) ? "" : `LIMIT ${limit}`;
@@ -78,7 +88,8 @@ const generateGroupBy = (groupBy) => {
 
 export default function generateQuerySQL(queries) {
   return queries.map(query => {
-    return `${generateFirstLine(query.table, query.columns, query.distinct, query.aggregate, query.aggregateAs, query.having, query.orderBy, query.order)} ${query.whereCondition.filter(c => c && c.trim()).length > 0 ? '\n' + generateWhere(query.whereCondition.filter(c => c && c.trim())) : ""}${query.groupBy.length > 0 ? "\n" + generateGroupBy(query.groupBy) : ""} ${query.having.length > 0 ? "\n" + generateColumns(query.aggregate, query.aggregateAs, query.columns, query.having, query.orderBy, query.order).havingString : ""} ${query.orderBy.length > 0 ? '\n' + generateColumns(query.aggregate, query.aggregateAs, query.columns, query.having, query.orderBy, query.order).orderByString : ""} ${query.limit ? "\n" + generateLimit(query.limit) : ""};`
+    const whereSQL = generateWhere(query.whereCondition || []);
+    return `${generateFirstLine(query.table, query.columns, query.distinct, query.aggregate, query.aggregateAs, query.having, query.orderBy, query.order)}${whereSQL ? '\n' + whereSQL : ''}${query.groupBy.length > 0 ? "\n" + generateGroupBy(query.groupBy) : ""} ${query.having.length > 0 ? "\n" + generateColumns(query.aggregate, query.aggregateAs, query.columns, query.having, query.orderBy, query.order).havingString : ""} ${query.orderBy.length > 0 ? '\n' + generateColumns(query.aggregate, query.aggregateAs, query.columns, query.having, query.orderBy, query.order).orderByString : ""} ${query.limit ? "\n" + generateLimit(query.limit) : ""};`
   })
 };
 

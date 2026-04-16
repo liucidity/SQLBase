@@ -2,7 +2,7 @@ import { useContext } from "react";
 import { GlobalContext } from "../GlobalStateProvider";
 import axios from "axios";
 
-import { LOAD_DB_TO_STATE, CREATE_NEW_STATE } from "../reducers/globalReducer";
+import { LOAD_DB_TO_STATE, CREATE_NEW_STATE, MARK_DB_CREATED } from "../reducers/globalReducer";
 
 // Send cookies with every request
 axios.defaults.withCredentials = true;
@@ -62,6 +62,9 @@ const useDatabase = () => {
     await saveProgress();
     await axios.put(`/api/databases`, { globalStateString });
     await axios.put(`/api/virtualDatabases`, { globalStateString, schemaString });
+    // Mark the DB as actually created and persist that flag
+    dispatch({ type: MARK_DB_CREATED });
+    await saveProgressWithState({ ...state, dbCreated: true });
   };
 
   const deleteDatabase = async (databaseName, databaseUuid) => {
@@ -89,6 +92,24 @@ const useDatabase = () => {
     return data;
   };
 
+  const getSavedQueries = async (databaseUuid) => {
+    const { data } = await axios.get(`/api/savedQueries`, { params: { databaseUuid } });
+    return data;
+  };
+
+  const saveNamedQuery = async (databaseUuid, name, queryState) => {
+    const { data } = await axios.post(`/api/savedQueries`, {
+      databaseUuid,
+      name,
+      queryState: JSON.stringify(queryState),
+    });
+    return data;
+  };
+
+  const deleteSavedQuery = async (id) => {
+    await axios.delete(`/api/savedQueries/${id}`);
+  };
+
   return {
     state,
     saveProgress,
@@ -101,6 +122,9 @@ const useDatabase = () => {
     queryDatabase,
     getDatabases,
     deleteDatabase,
+    getSavedQueries,
+    saveNamedQuery,
+    deleteSavedQuery,
   };
 };
 

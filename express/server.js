@@ -6,6 +6,10 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const path = require("path");
+const fs = require("fs");
 
 /**
  * Database setup
@@ -16,13 +20,48 @@ const dbHelpers = require("./helpers/dbHelpers")(db);
 const dbSeedQueryHelpers = require("./helpers/virtualDBHelpers")(virtualDB);
 
 /**
- * Middleware
+ * Security middleware
  */
+app.use(helmet({
+  // Allow inline scripts/styles that the React build may use
+  contentSecurityPolicy: false,
+}));
+
 app.use(cors({
   origin: process.env.CLIENT_ORIGIN || "http://localhost:3000",
   credentials: true,
 }));
-app.use(logger("dev"));
+
+/**
+ * Rate limiting
+ */
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests, please try again later." },
+});
+
+/**
+ * General middleware
+ */
+if (process.env.NODE_ENV === "production") {
+  const logsDir = path.join(__dirname, "logs");
+  if (!fs.existsSync(logsDir)) fs.mkdirSync(logsDir);
+  const accessLog = fs.createWriteStream(path.join(logsDir, "access.log"), { flags: "a" });
+  app.use(logger("combined", { stream: accessLog }));
+} else {
+  app.use(logger("dev"));
+}
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -38,14 +77,37 @@ const queryApiRoutes = require("./routes/query-api");
 const userDatabaseApiRoutes = require("./routes/user-database-api");
 const virtualDatabaseApiRoutes = require("./routes/virtual-database-api");
 const authApiRoutes = require("./routes/auth-api");
+const savedQueriesApiRoutes = require("./routes/saved-queries-api");
 const { authenticate } = require("./middleware/auth");
 
-app.use("/api/auth", authApiRoutes({ ...dbHelpers, ...dbSeedQueryHelpers }));
-app.use("/api/databases", authenticate, userDatabaseApiRoutes(dbHelpers));
-app.use("/api/virtualDatabases", authenticate, virtualDatabaseApiRoutes(dbSeedQueryHelpers));
-app.use("/api/seed", authenticate, seedApiRoutes(dbSeedQueryHelpers));
-app.use("/api/query", authenticate, queryApiRoutes(dbSeedQueryHelpers));
-app.use("/api/tables", authenticate, tableApiRoutes(dbHelpers));
+// Health check — includes live DB ping so load balancers get a 503 on DB outage
+app.get("/health", async (req, res) => {
+  try {
+    await db.query("SELECT 1");
+    res.json({ status: "ok", db: "ok", uptime: process.uptime() });
+  } catch {
+    res.status(503).json({ status: "error", db: "unreachable" });
+  }
+});
+
+app.use("/api/auth", authLimiter, authApiRoutes({ ...dbHelpers, ...dbSeedQueryHelpers }));
+app.use("/api/databases", apiLimiter, authenticate, userDatabaseApiRoutes(dbHelpers));
+app.use("/api/virtualDatabases", apiLimiter, authenticate, virtualDatabaseApiRoutes({ ...dbSeedQueryHelpers, ...dbHelpers, ...virtualDB }));
+app.use("/api/seed", apiLimiter, authenticate, seedApiRoutes(dbSeedQueryHelpers));
+app.use("/api/query", apiLimiter, authenticate, queryApiRoutes(dbSeedQueryHelpers));
+app.use("/api/tables", apiLimiter, authenticate, tableApiRoutes(dbHelpers));
+app.use("/api/savedQueries", apiLimiter, authenticate, savedQueriesApiRoutes(dbHelpers));
+
+/**
+ * Serve React build in production
+ */
+if (process.env.NODE_ENV === "production") {
+  const clientBuild = path.join(__dirname, "../client/build");
+  app.use(express.static(clientBuild));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(clientBuild, "index.html"));
+  });
+}
 
 /**
  * Port setup

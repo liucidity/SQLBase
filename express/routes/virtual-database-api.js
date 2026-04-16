@@ -1,6 +1,6 @@
 const express = require("express");
 
-module.exports = ({ createTable, dropDB, seedTable, queryTable }) => {
+module.exports = ({ createTable, dropDB, seedTable, queryTable, releasePool }) => {
   const router = express.Router();
 
   router.put("/", (req, res) => {
@@ -9,31 +9,27 @@ module.exports = ({ createTable, dropDB, seedTable, queryTable }) => {
     const originalDBName = globalStateString.databaseName;
     createTable(originalDBName, req.user.id, schemaString)
       .then(data => {
-        // console.log(data)
         res.json(data);
       })
       .catch(err => {
-        console.log('vda', err.message)
+        console.log('vda', err.message);
         res.status(500).json({ error: err.message });
       });
-  })
+  });
 
-
-  router.post("/", (req, res) => {
+  router.post("/", async (req, res) => {
     const globalStateString = req.body.globalStateString;
     const originalDBName = globalStateString.databaseName;
-
-    dropDB(originalDBName)
-      .then(data => {
-        res.json(data);
-      })
-      .catch(err => {
-        console.log('vda', err.message)
-        res.status(500).json({ error: err.message });
-      });
-  })
-
-
+    try {
+      // Release pool before dropping so no stale connections remain
+      if (releasePool) await releasePool(originalDBName);
+      const data = await dropDB(originalDBName);
+      res.json(data);
+    } catch (err) {
+      console.log('vda', err.message);
+      res.status(500).json({ error: err.message });
+    }
+  });
 
   return router;
-}
+};

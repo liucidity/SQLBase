@@ -87,7 +87,9 @@ const UserDatabases = () => {
               <div className="database-card-body">
                 <div className="database-card-name">{db.databaseName}</div>
                 <div className="database-card-meta">
-                  <span className="db-status-badge active">active</span>
+                  <span className={`db-status-badge ${db.dbCreated ? "active" : "schema-only"}`}>
+                    {db.dbCreated ? "Created" : "Schema only"}
+                  </span>
                   <span className="db-table-count">
                     {(db.schemaState || []).length} table{(db.schemaState || []).length !== 1 ? "s" : ""}
                   </span>

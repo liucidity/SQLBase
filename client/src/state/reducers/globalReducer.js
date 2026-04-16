@@ -18,16 +18,25 @@ export const SCHEMA_ADD_FIELD = "SCHEMA_ADD_FIELD";
 export const SCHEMA_REMOVE_FIELD = "SCHEMA_REMOVE_FIELD";
 export const SCHEMA_HANDLE_CHANGE = "SCHEMA_HANDLE_CHANGE";
 export const SCHEMA_SET_ALL_TABLES = "SCHEMA_SET_ALL_TABLES";
+export const SCHEMA_DUPLICATE_TABLE = "SCHEMA_DUPLICATE_TABLE";
 
 // query
 export const QUERY_ADD_TABLE = "QUERY_ADD_TABLE";
 export const QUERY_REMOVE_TABLE = "QUERY_REMOVE_TABLE";
 export const INSERT_QUERY_TABLE = "INSERT_QUERY_TABLE";
 export const SET_QUERY_PARAMS = "SET_QUERY_PARAMS";
+export const LOAD_QUERY_STATE = "LOAD_QUERY_STATE";
+export const QUERY_SET_TABLE = "QUERY_SET_TABLE";
+export const QUERY_CLEAR_TABLE = "QUERY_CLEAR_TABLE";
+
+// database lifecycle
+export const MARK_DB_CREATED = "MARK_DB_CREATED";
 
 // seed
 export const SEED_FAKE_DATA = "SEED_FAKE_DATA";
 export const SEED_ALL_FAKE_DATA = "SEED_ALL_FAKE_DATA";
+export const SET_SEED_FIELD_CONFIG = "SET_SEED_FIELD_CONFIG";
+export const CSV_IMPORT_TABLE = "CSV_IMPORT_TABLE";
 
 /**
  * The reducer function from the 'useReducer' hook, specifies the actions (functions to execute) to update the state object
@@ -43,6 +52,7 @@ const globalReducer = (state, action) => {
       initialGlobalState.databaseUuid = uuid();
       return initialGlobalState;
     },
+    MARK_DB_CREATED: state => ({ ...state, dbCreated: true }),
     SCHEMA_ADD_TABLE: state => {
       const newState = deepCopy(state);
       const schemaState = newState.schemaState;
@@ -90,6 +100,14 @@ const globalReducer = (state, action) => {
       ...deepCopy(state),
       schemaState: action.tables,
     }),
+    SCHEMA_DUPLICATE_TABLE: state => {
+      const newState = deepCopy(state);
+      const original = newState.schemaState[action.tableIndex];
+      const copy = deepCopy(original);
+      copy.table = copy.table ? `${copy.table}_copy` : "copy";
+      newState.schemaState.splice(action.tableIndex + 1, 0, copy);
+      return newState;
+    },
     SCHEMA_HANDLE_CHANGE: state => {
       const newState = deepCopy(state);
       const schemaState = newState.schemaState;
@@ -121,6 +139,10 @@ const globalReducer = (state, action) => {
     },
 
     //--------------------------------------- QUERY REDUCERS
+    LOAD_QUERY_STATE: state => ({
+      ...deepCopy(state),
+      queryState: action.queryState,
+    }),
     QUERY_ADD_TABLE: state => {
       const newState = deepCopy(state);
       let queryState = newState.queryState[0];
@@ -191,6 +213,28 @@ const globalReducer = (state, action) => {
         ...newState,
         queryState,
       };
+    },
+    QUERY_SET_TABLE: state => {
+      const newState = deepCopy(state);
+      const queryState = newState.queryState[0];
+      const table = newState.schemaState.find(t => t.table === action.tableName);
+      if (table) {
+        queryState.schemas[action.queryIndex] = deepCopy(table);
+      }
+      queryState.queries[action.queryIndex] = {
+        ...deepCopy(initialQueries),
+        table: action.tableName,
+      };
+      newState.queryState = [{ ...queryState }];
+      return newState;
+    },
+    QUERY_CLEAR_TABLE: state => {
+      const newState = deepCopy(state);
+      const queryState = newState.queryState[0];
+      queryState.schemas[action.queryIndex] = deepCopy(initialSchemaState);
+      queryState.queries[action.queryIndex] = deepCopy(initialQueries);
+      newState.queryState = [{ ...queryState }];
+      return newState;
     },
     SET_QUERY_PARAMS: state => {
       const newState = deepCopy(state);
@@ -360,6 +404,43 @@ const globalReducer = (state, action) => {
         ...newState,
         seedState,
       };
+    },
+    // { tableName, fieldName, seedType, min?, max? }
+    SET_SEED_FIELD_CONFIG: state => {
+      const newState = deepCopy(state);
+      const cfg = newState.seedFieldConfig || {};
+      const tableCfg = cfg[action.tableName] || {};
+      cfg[action.tableName] = {
+        ...tableCfg,
+        [action.fieldName]: {
+          seedType: action.seedType,
+          min: action.min,
+          max: action.max,
+        },
+      };
+      return { ...newState, seedFieldConfig: cfg };
+    },
+    // Atomically append a CSV-imported table to schemaState and seed it
+    CSV_IMPORT_TABLE: state => {
+      const newState = deepCopy(state);
+      const { schemaTable, seedRows } = action;
+
+      // Replace existing table with same name, or append
+      const idx = newState.schemaState.findIndex(t => t.table === schemaTable.table);
+      if (idx >= 0) {
+        newState.schemaState[idx] = schemaTable;
+      } else {
+        // Remove the initial empty placeholder if it's the only table
+        const filtered = newState.schemaState.filter(t => t.table !== "");
+        newState.schemaState = [...filtered, schemaTable];
+      }
+
+      // Update seedState
+      const seedState = newState.seedState[0] || {};
+      seedState[schemaTable.table] = seedRows;
+      newState.seedState = [{ ...seedState }];
+
+      return newState;
     },
   };
 

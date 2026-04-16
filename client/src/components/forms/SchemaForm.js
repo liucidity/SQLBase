@@ -249,6 +249,7 @@ const SchemaForm = ({
   removeField,
   references,
   removeTable,
+  duplicateTable,
 }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -275,6 +276,13 @@ const SchemaForm = ({
           </button>
           {menuOpen && (
             <div className="table-menu-dropdown">
+              <button
+                type="button"
+                className="table-menu-item"
+                onClick={() => { duplicateTable(tableIndex); setMenuOpen(false); }}
+              >
+                Duplicate
+              </button>
               <button
                 type="button"
                 className="table-menu-item danger"

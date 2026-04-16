@@ -125,6 +125,11 @@
     color: #15803d;
   }
 
+  &.schema-only {
+    background: #fef9c3;
+    color: #854d0e;
+  }
+
   &.inactive {
     background: var(--surface);
     color: var(--text-muted);
