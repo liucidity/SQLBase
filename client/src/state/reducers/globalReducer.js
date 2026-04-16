@@ -17,6 +17,7 @@ export const SCHEMA_REMOVE_TABLE = "SCHEMA_REMOVE_TABLE";
 export const SCHEMA_ADD_FIELD = "SCHEMA_ADD_FIELD";
 export const SCHEMA_REMOVE_FIELD = "SCHEMA_REMOVE_FIELD";
 export const SCHEMA_HANDLE_CHANGE = "SCHEMA_HANDLE_CHANGE";
+export const SCHEMA_SET_ALL_TABLES = "SCHEMA_SET_ALL_TABLES";
 
 // query
 export const QUERY_ADD_TABLE = "QUERY_ADD_TABLE";
@@ -85,6 +86,10 @@ const globalReducer = (state, action) => {
         schemaState,
       };
     },
+    SCHEMA_SET_ALL_TABLES: state => ({
+      ...deepCopy(state),
+      schemaState: action.tables,
+    }),
     SCHEMA_HANDLE_CHANGE: state => {
       const newState = deepCopy(state);
       const schemaState = newState.schemaState;
@@ -271,13 +276,11 @@ const globalReducer = (state, action) => {
         };
       }
       if (action.queryType === "whereCondition") {
-        queries[action.queryIndex].whereCondition[action.fieldIndex] =
-          action.queryName;
-        console.log(
-          "bug fix",
-          queries[action.queryIndex].whereCondition[action.fieldIndex]
-        );
-        console.log("bug fix 2", action.fieldIndex);
+        if (action.queryName === null) {
+          queries[action.queryIndex].whereCondition.splice(action.fieldIndex, 1);
+        } else {
+          queries[action.queryIndex].whereCondition[action.fieldIndex] = action.queryName;
+        }
         queryState = [
           {
             ...queryState,

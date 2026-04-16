@@ -1,147 +1,134 @@
-/* ─── Seeds page layout ───────────────────────────── */
-#seedsMain {
-  padding: 32px;
-  background: var(--bg);
-  min-height: 100vh;
-  width: 100%;
-  box-shadow: none;
+/* ─── Seeds config list ────────────────────────────── */
+.seeds-config-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
 
-  #seedsContainer {
-    display: flex;
-    flex-direction: row;
-    gap: 20px;
-    align-items: flex-start;
-    width: 100%;
+/* ─── Seed table row ───────────────────────────────── */
+.seed-table-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: border-color 0.15s;
 
-    #seedsForm {
-      width: 320px;
-      flex-shrink: 0;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: #fff;
-      padding: 20px;
-      box-shadow: none;
-      max-height: none;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
+  &:hover {
+    border-color: #c7d2fe;
+  }
 
-      #labels {
-        display: flex;
-        flex-direction: row;
-        justify-content: space-between;
-        padding-bottom: 8px;
-        border-bottom: 1px solid var(--border);
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
+  .seed-table-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: monospace;
+    min-width: 120px;
+  }
 
-      #seedItems {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
+  .seed-slider-wrap {
+    flex: 1;
+    min-width: 120px;
+    padding: 0 4px;
+  }
 
-        .tableOptions {
-          display: flex;
-          flex-direction: row;
-          justify-content: space-between;
-          align-items: center;
-          padding: 4px 0;
+  .seed-rows-input {
+    width: 64px;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface);
+    outline: none;
+    text-align: center;
+    transition: border-color 0.15s;
+    flex-shrink: 0;
 
-          label {
-            font-size: 14px;
-            color: var(--text);
-            margin: 0;
-          }
+    &:focus {
+      border-color: var(--accent);
+    }
 
-          button {
-            margin: 0;
-            div {
-              font-weight: 500;
-              margin-left: 6px;
-              margin-top: 0;
-            }
-          }
-        }
-      }
+    /* Hide spin buttons */
+    -moz-appearance: textfield;
+    &::-webkit-inner-spin-button,
+    &::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+    }
+  }
+
+  .seed-rows-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .seed-preview-btn {
+    padding: 5px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.15s, color 0.15s;
+
+    &:hover {
+      border-color: var(--accent);
+      color: var(--accent);
     }
   }
 }
 
-/* ─── SQL preview panel ───────────────────────────── */
-#seedsDemo {
-  flex: 1;
-  margin: 0;
-  width: auto;
-  height: auto;
-  border-radius: var(--radius);
-  overflow: hidden;
-
-  div {
-    border-radius: var(--radius);
-    overflow: hidden;
-    padding: 0;
-    margin: 0;
-    height: auto;
-  }
+/* ─── Empty state ──────────────────────────────────── */
+.seed-empty {
+  padding: 24px 0;
+  font-size: 13px;
+  color: var(--text-muted);
+  font-style: italic;
 }
 
-/* ─── Form title ──────────────────────────────────── */
-#seedsFormTitle {
+/* ─── Seed all button ──────────────────────────────── */
+.seed-all-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
   font-size: 14px;
   font-weight: 600;
-  color: var(--text);
-  text-align: left;
-  padding: 0;
-  margin: 0;
-}
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+  margin-top: 4px;
 
-#tableContainer {
-  width: 100%;
-}
+  &:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
 
-/* ─── Action bar ──────────────────────────────────── */
-#seeds-buttons {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  justify-content: flex-end;
-  padding: 24px 0 8px;
-  width: 100%;
-  margin: 0;
-  align-self: unset;
-
-  button {
-    min-width: unset;
-    box-shadow: none !important;
-    div { margin-left: 6px; margin-top: 0; }
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 }
 
 /* ─── Responsive ──────────────────────────────────── */
-@media (max-width: 900px) {
-  #seedsMain {
-    padding: 16px;
-
-    #seedsContainer {
-      flex-direction: column;
-
-      #seedsForm {
-        width: 100%;
-      }
-
-      #seedsDemo {
-        width: 100%;
-      }
-    }
-  }
-
-  #seeds-buttons {
-    justify-content: flex-start;
+@media (max-width: 600px) {
+  .seed-table-row {
     flex-wrap: wrap;
+
+    .seed-table-name {
+      min-width: unset;
+      width: 100%;
+    }
+
+    .seed-slider-wrap {
+      width: 100%;
+      flex: unset;
+    }
   }
 }

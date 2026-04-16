@@ -7,6 +7,7 @@ import {
   SCHEMA_ADD_FIELD,
   SCHEMA_REMOVE_FIELD,
   SCHEMA_HANDLE_CHANGE,
+  SCHEMA_SET_ALL_TABLES,
 } from "../reducers/globalReducer";
 
 const useSchemaState = () => {
@@ -30,6 +31,9 @@ const useSchemaState = () => {
       fieldIndex,
     });
 
+  const setAllSchemaTables = tables =>
+    dispatch({ type: SCHEMA_SET_ALL_TABLES, tables });
+
   return {
     state,
     addSchemaTable,
@@ -37,6 +41,7 @@ const useSchemaState = () => {
     addSchemaField,
     removeSchemaField,
     handleSchemaChange,
+    setAllSchemaTables,
   };
 };
 

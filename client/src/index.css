@@ -12,6 +12,21 @@
   --danger: #ef4444;
   --danger-hover: #dc2626;
   --radius: 8px;
+
+  /* Code block panel */
+  --code-bg: #1e1e2e;
+  --code-keyword: #6366f1;
+  --code-identifier: #5eead4;
+  --code-type: #a78bfa;
+  --code-value: #fb923c;
+  --code-comment: #6b7280;
+
+  /* Type pill colors — Catppuccin Mocha palette */
+  --type-numeric: #fab387;  /* orange  — INT, BIGINT, SERIAL, DECIMAL, FLOAT */
+  --type-text:    #cba6f7;  /* mauve   — VARCHAR, TEXT */
+  --type-date:    #89dceb;  /* sky     — DATE, TIMESTAMP */
+  --type-bool:    #a6e3a1;  /* green   — BOOLEAN */
+  --type-uuid:    #f38ba8;  /* pink    — UUID */
 }
 
 *,

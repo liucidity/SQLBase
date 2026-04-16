@@ -1,239 +1,239 @@
-import { React, useState } from "react";
+import React, { useState } from "react";
 import "./QueriesForm.scss";
-import { useForm } from "react-hook-form";
-import Button from "@mui/material/Button";
-import { FormInputText } from "../fields/FormInputText";
-import { FormInputDropdown } from "../fields/FormInputDropdown";
-import ClearIcon from "@mui/icons-material/Clear";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
-import SuccessSnackbar from "../snackbars/SuccessSnackbar";
+import CircularProgress from "@mui/material/CircularProgress";
 import useDatabase from "../../state/hooks/useDatabase";
 import useQueryState from "../../state/hooks/useQueryState";
 import generateQuerySQL from "../../helpers/queryFormHelpers";
-import QueryModal from "../modal/QueryModal";
-import StorageIcon from "@mui/icons-material/Storage";
-import CircularProgress from "@mui/material/CircularProgress";
+
+const AGGREGATES = ["SUM", "AVG", "COUNT", "MAX", "MIN"];
+
+function CollapsibleSection({ title, children, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className={`query-section${open ? " open" : ""}`}>
+      <button type="button" className="section-toggle" onClick={() => setOpen(o => !o)}>
+        <span className="section-chevron">{open ? "▾" : "▸"}</span>
+        {title}
+      </button>
+      {open && <div className="section-body">{children}</div>}
+    </div>
+  );
+}
 
 const QueriesForm = ({
   table,
   queries,
   tableIndex,
   handleChange,
-  addField,
-  removeField,
   removeQuery,
   tableNameList,
   getColumnList,
   handleQuery,
+  onRunQuery,
+  queryLoading,
+  queryResults,
 }) => {
-  const {
-    formState: { errors },
-    control,
-  } = useForm();
-
   const { state } = useQueryState();
-  const { queryDatabase } = useDatabase();
+  const query = queries[tableIndex] || {};
+  const columns = query.columns || [];
+  const availableCols = getColumnList(table).filter(c => c.value !== "none");
 
-  const [isOpen, setIsOpen] = useState({ modal: false, result: [] });
-  const [queryLoading, setQueryLoading] = useState(false);
-  const [snackbar, setSnackbar] = useState({ open: false, message: "", isError: false });
-
-  const showSnackbar = (message, isError = false) =>
-    setSnackbar({ open: true, message, isError });
-  const closeSnackbar = () => setSnackbar(s => ({ ...s, open: false }));
-
-  const handleClose = () => setIsOpen({ modal: false, result: [] });
-
-  const buttonHandler = async (target, tableIndex) => {
-    if (target === "query") {
-      if (!state.databaseName) {
-        showSnackbar("No database loaded. Load a database first.", true);
-        return;
-      }
-      setQueryLoading(true);
-      try {
-        const result = await queryDatabase(
-          state.databaseName,
-          generateQuerySQL(queries)[tableIndex]
-        );
-        setIsOpen({ modal: true, result: result || [] });
-      } catch (err) {
-        showSnackbar(err?.response?.data?.error || "Query failed.", true);
-      } finally {
-        setQueryLoading(false);
-      }
+  const addColumn = colName => {
+    if (!columns.includes(colName)) {
+      handleQuery({ target: { value: colName } }, tableIndex, "columns", columns.length);
     }
   };
 
+  const removeColumn = colIndex => {
+    handleQuery({ target: { value: "none" } }, tableIndex, "columns", colIndex);
+  };
+
+  const setAggregate = (colIndex, agg) => {
+    handleQuery({ target: { value: agg || "none" } }, tableIndex, "aggregate", colIndex);
+  };
+
+  const addWhereCondition = () => {
+    const idx = (query.whereCondition || []).length;
+    handleQuery({ target: { value: "" } }, tableIndex, "whereCondition", idx);
+  };
+
+  const setWhereCondition = (idx, val) => {
+    handleQuery({ target: { value: val } }, tableIndex, "whereCondition", idx);
+  };
+
+  const removeWhereCondition = idx => {
+    handleQuery({ target: { value: null } }, tableIndex, "whereCondition", idx);
+  };
+
+  const addOrderBy = colName => {
+    handleQuery({ target: { value: colName } }, tableIndex, "orderBy", 0);
+  };
+
+  const setOrder = val => {
+    handleQuery({ target: { value: val } }, tableIndex, "order");
+  };
+
+  const setLimit = val => {
+    handleQuery({ target: { value: val } }, tableIndex, "limit");
+  };
+
   return (
-    <div className="query-table">
-      {isOpen.modal && (
-        <QueryModal
-          open={isOpen.modal}
-          result={isOpen.result}
-          onClick={handleClose}
-        />
-      )}
-      <FormInputDropdown
-        name={"TableSelect"}
-        control={control}
-        label={"Table Select"}
-        menuOptions={tableNameList}
-        handleChange={e => handleChange(e, tableIndex)}
-        value={table.table}
-      />
-      {table.fields.map((field, fieldIndex) => {
-        return (
-          <div className="field-inputs">
-            <FormInputDropdown
-              uniqueID={`Col-select-${fieldIndex}`}
-              name={"Column"}
-              control={control}
-              label={"Column"}
-              menuOptions={getColumnList(table)}
-              handleChange={e =>
-                handleQuery(e, tableIndex, "columns", fieldIndex)
-              }
-              value={queries[tableIndex].columns[fieldIndex]}
-            />
-            <FormInputDropdown
-              uniqueID={`distinct-${fieldIndex}`}
-              name={"distinct"}
-              control={control}
-              label={"Distinct"}
-              menuOptions={[
-                { label: "Not Distinct", value: false },
-                { label: "Distinct", value: true },
-              ]}
-              handleChange={e => handleQuery(e, tableIndex, "distinct")}
-              value={queries[tableIndex].distinct}
-            />
-            <FormInputDropdown
-              uniqueID={`aggregate-${fieldIndex}`}
-              name={"aggregate"}
-              control={control}
-              label={"Aggregate"}
-              menuOptions={[
-                { label: "Sum", value: "SUM" },
-                { label: "Average", value: "AVG" },
-                { label: "Count", value: "COUNT" },
-                { label: "Max", value: "MAX" },
-                { label: "Min", value: "MIN" },
-                { label: "None", value: "none" },
-              ]}
-              handleChange={e =>
-                handleQuery(e, tableIndex, "aggregate", fieldIndex)
-              }
-              value={queries[tableIndex].aggregate[fieldIndex]}
-            />
-            {queries[tableIndex].aggregate.length > 0 && (
-              <FormInputText
-                uniqueID={`aggregateAs-${fieldIndex}`}
-                handleChange={e =>
-                  handleQuery(e, tableIndex, "aggregateAs", fieldIndex)
-                }
-                name={"aggregateAs"}
-                control={control}
-                label={"As"}
-              />
-            )}
-            {queries[tableIndex].aggregate.length > 0 && (
-              <FormInputDropdown
-                uniqueID={`groupBy-${fieldIndex}`}
-                name={"groupBy"}
-                control={control}
-                label={"Group By"}
-                menuOptions={getColumnList(table)}
-                handleChange={e =>
-                  handleQuery(e, tableIndex, "groupBy", fieldIndex)
-                }
-                value={queries[tableIndex].groupBy[fieldIndex]}
-              />
-            )}
-            {queries[tableIndex].aggregate.length > 0 && (
-              <FormInputText
-                uniqueID={`having-${fieldIndex}`}
-                handleChange={e =>
-                  handleQuery(e, tableIndex, "having", fieldIndex)
-                }
-                name={"having"}
-                control={control}
-                label={"Having Condition"}
-                value={queries[tableIndex].having[fieldIndex]}
-              />
-            )}
-            <FormInputText
-              uniqueID={`condition-${fieldIndex}`}
-              handleChange={e =>
-                handleQuery(e, tableIndex, "whereCondition", fieldIndex)
-              }
-              name={"whereCondition"}
-              control={control}
-              label={"Condition"}
-              value={queries[tableIndex].whereCondition[fieldIndex]}
-            />
-            <FormInputText
-              uniqueID={`limit-${fieldIndex}`}
-              handleChange={e => handleQuery(e, tableIndex, "limit")}
-              name={"limit"}
-              control={control}
-              label={"Limit"}
-              value={
-                queries[tableIndex].limit === 1000
-                  ? ""
-                  : queries[tableIndex].limit
-              }
-            />
-            <FormInputDropdown
-              uniqueID={`orderBy-${fieldIndex}`}
-              name={"orderBy"}
-              control={control}
-              label={"Order by"}
-              menuOptions={getColumnList(table)}
-              handleChange={e =>
-                handleQuery(e, tableIndex, "orderBy", fieldIndex)
-              }
-            />
-            {queries[tableIndex].orderBy && (
-              <FormInputDropdown
-                uniqueID={`order-${fieldIndex}`}
-                name={"order"}
-                control={control}
-                label={"Asc/Desc"}
-                menuOptions={[
-                  { label: "Ascending", value: "ASC" },
-                  { label: "Descending", value: "DESC" },
-                ]}
-                handleChange={e => handleQuery(e, tableIndex, "order")}
-              />
+    <div className="query-builder-card">
+      {/* Table selector row */}
+      <div className="query-card-header">
+        <span className="query-card-table-label">Table</span>
+        <div className="table-chip-row">
+          {tableNameList.map(t => (
+            <button
+              key={t.value}
+              type="button"
+              className={`table-chip${table.table === t.value ? " active" : ""}`}
+              onClick={() => handleChange({ target: { value: t.value } }, tableIndex)}
+            >
+              {t.label}
+            </button>
+          ))}
+          {tableNameList.length === 0 && (
+            <span className="query-empty-hint">No tables defined yet — build a schema first.</span>
+          )}
+        </div>
+        <button
+          type="button"
+          className="query-remove-btn"
+          onClick={() => removeQuery(tableIndex)}
+          title="Remove this query"
+        >
+          ×
+        </button>
+      </div>
+
+      {/* Columns section */}
+      {table.table && (
+        <div className="query-columns-section">
+          <div className="query-section-label">Columns</div>
+
+          {/* Available columns to add */}
+          <div className="col-add-row">
+            {availableCols.map(col => (
+              <button
+                key={col.value}
+                type="button"
+                className={`col-available-chip${columns.includes(col.value) ? " added" : ""}`}
+                onClick={() => addColumn(col.value)}
+                title={columns.includes(col.value) ? "Already selected" : `Add ${col.value}`}
+              >
+                {col.label}
+              </button>
+            ))}
+            {availableCols.length === 0 && (
+              <span className="query-empty-hint">Select a table first</span>
             )}
           </div>
-        );
-      })}
 
-      <div className="add-remove-button">
-        <Button
-          onClick={() => buttonHandler("query", tableIndex)}
-          disabled={queryLoading}
-          startIcon={queryLoading ? <CircularProgress size={16} /> : <StorageIcon />}
-        >
-          <div>{queryLoading ? "Running..." : "Query Database"}</div>
-        </Button>
+          {/* Selected columns with aggregate options */}
+          {columns.length > 0 && (
+            <div className="selected-cols-list">
+              {columns.map((col, colIdx) => (
+                <div key={colIdx} className="selected-col-row">
+                  <span className="selected-col-name">{col}</span>
+                  <div className="agg-chips">
+                    {AGGREGATES.map(agg => (
+                      <button
+                        key={agg}
+                        type="button"
+                        className={`agg-chip${(query.aggregate || [])[colIdx] === agg ? " active" : ""}`}
+                        onClick={() =>
+                          setAggregate(colIdx, (query.aggregate || [])[colIdx] === agg ? "" : agg)
+                        }
+                      >
+                        {agg}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    className="col-remove-btn"
+                    onClick={() => removeColumn(colIdx)}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
-        <Button
-          key={`Remove-${tableIndex}`}
-          primary="true"
-          onClick={() => removeQuery(tableIndex)}
-        >
-          <DeleteForeverIcon /> <div>Delete Query</div>
-        </Button>
+      {/* WHERE section */}
+      <CollapsibleSection title="WHERE">
+        <div className="where-conditions">
+          {(query.whereCondition || []).map((cond, idx) => (
+            <div key={idx} className="condition-row">
+              <input
+                type="text"
+                className="condition-input"
+                placeholder={`e.g. age > 18${idx > 0 ? " AND …" : ""}`}
+                value={cond || ""}
+                onChange={e => setWhereCondition(idx, e.target.value)}
+              />
+              <button
+                type="button"
+                className="condition-remove-btn"
+                onClick={() => removeWhereCondition(idx)}
+                title="Remove condition"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+          <button type="button" className="add-condition-btn" onClick={addWhereCondition}>
+            + Add Condition
+          </button>
+        </div>
+      </CollapsibleSection>
+
+      {/* ORDER BY section */}
+      <CollapsibleSection title="ORDER BY">
+        <div className="orderby-row">
+          <div className="orderby-chips">
+            {availableCols.map(col => (
+              <button
+                key={col.value}
+                type="button"
+                className={`orderby-chip${(query.orderBy || [])[0] === col.value ? " active" : ""}`}
+                onClick={() => addOrderBy(col.value)}
+              >
+                {col.label}
+              </button>
+            ))}
+          </div>
+          <div className="order-direction">
+            {["ASC", "DESC"].map(dir => (
+              <button
+                key={dir}
+                type="button"
+                className={`direction-btn${query.order === dir ? " active" : ""}`}
+                onClick={() => setOrder(dir)}
+              >
+                {dir}
+              </button>
+            ))}
+          </div>
+        </div>
+      </CollapsibleSection>
+
+      {/* LIMIT row */}
+      <div className="limit-row">
+        <label className="limit-label">LIMIT</label>
+        <input
+          type="number"
+          className="limit-input"
+          placeholder="1000"
+          min={1}
+          value={query.limit === 1000 ? "" : query.limit || ""}
+          onChange={e => setLimit(e.target.value ? Number(e.target.value) : 1000)}
+        />
       </div>
-      <SuccessSnackbar
-        open={snackbar.open}
-        message={snackbar.message}
-        isError={snackbar.isError}
-        handleClose={closeSnackbar}
-      />
     </div>
   );
 };

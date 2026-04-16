@@ -1,17 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import useDatabase from "../../state/hooks/useDatabase";
-import BarChartCard from "../charts/bar-chart/BarChartCard";
-import PieChartCard from "../charts/pie-chart/PieChartCard";
+import ResponsiveBarChart from "../charts/bar-chart/ResponsiveBarChart";
+import ResponsivePieChart from "../charts/pie-chart/ResponsivePieChart";
 import SuccessSnackbar from "../snackbars/SuccessSnackbar";
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  CircularProgress,
-} from "@mui/material";
-import PlayArrowIcon from "@mui/icons-material/PlayArrow";
+import CircularProgress from "@mui/material/CircularProgress";
 import "./CreateCharts.scss";
+
+function DropZone({ label, assignedCol, onDrop }) {
+  const [over, setOver] = useState(false);
+
+  return (
+    <div
+      className={`drop-zone${over ? " drag-over" : ""}${assignedCol ? " assigned" : ""}`}
+      onDragOver={e => { e.preventDefault(); setOver(true); }}
+      onDragLeave={() => setOver(false)}
+      onDrop={e => {
+        e.preventDefault();
+        setOver(false);
+        const col = e.dataTransfer.getData("text/plain");
+        if (col) onDrop(col);
+      }}
+    >
+      {assignedCol
+        ? <span className="drop-zone-value">{assignedCol}</span>
+        : <span className="drop-zone-placeholder">{label}</span>
+      }
+    </div>
+  );
+}
 
 const CreateChartsPage = () => {
   const { state, queryDatabase } = useDatabase();
@@ -25,11 +41,7 @@ const CreateChartsPage = () => {
   const [barYKey, setBarYKey] = useState("");
   const [pieKey, setPieKey] = useState("");
 
-  const [snackbar, setSnackbar] = useState({
-    open: false,
-    message: "",
-    isError: false,
-  });
+  const [snackbar, setSnackbar] = useState({ open: false, message: "", isError: false });
 
   const showSnackbar = (message, isError = false) =>
     setSnackbar({ open: true, message, isError });
@@ -82,80 +94,117 @@ const CreateChartsPage = () => {
   const hasData = rows.length > 0;
 
   return (
-    <main>
-      <Box id="chart-container" sx={{ flexDirection: "column !important" }}>
-        <Box
-          sx={{
-            mb: 3,
-            p: 2,
-            border: "1px solid #e0e0e0",
-            borderRadius: 2,
-            background: "white",
-            width: "100%",
-          }}
-        >
-          <Typography variant="subtitle2" sx={{ mb: 1, color: "#666" }}>
+    <main className="charts-canvas">
+      {/* ── SQL input area ──────────────────────────── */}
+      <div className="charts-sql-bar">
+        <div className="charts-sql-header">
+          <span className="charts-db-label">
             Database: <strong>{state.databaseName || "None loaded"}</strong>
-          </Typography>
-          <TextField
-            fullWidth
-            multiline
-            rows={2}
-            value={sql}
-            onChange={e => setSql(e.target.value)}
-            placeholder="SELECT * FROM your_table LIMIT 100"
-            variant="outlined"
-            size="small"
-            sx={{ mb: 1 }}
-          />
-          <Button
-            variant="contained"
-            startIcon={
-              loading ? (
-                <CircularProgress size={16} color="inherit" />
-              ) : (
-                <PlayArrowIcon />
-              )
-            }
-            onClick={runQuery}
-            disabled={loading}
-          >
-            Run Query
-          </Button>
-          {hasData && (
-            <Typography variant="caption" sx={{ ml: 2, color: "#666" }}>
+          </span>
+        </div>
+        <textarea
+          className="charts-sql-input"
+          value={sql}
+          onChange={e => setSql(e.target.value)}
+          rows={2}
+          spellCheck={false}
+        />
+        <button
+          className="charts-run-btn"
+          onClick={runQuery}
+          disabled={loading}
+        >
+          {loading
+            ? <CircularProgress size={14} color="inherit" />
+            : "▶ Run Query"
+          }
+          {hasData && !loading && (
+            <span className="charts-row-count">
               {rows.length} row{rows.length !== 1 ? "s" : ""}
-            </Typography>
+            </span>
           )}
-        </Box>
+        </button>
+      </div>
 
-        {hasData && (
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              gap: 3,
-              flexWrap: "wrap",
-              width: "100%",
-            }}
-          >
-            <BarChartCard
-              columns={columns}
-              xKey={xKey}
-              yKey={barYKey}
-              onXChange={setXKey}
-              onYChange={setBarYKey}
-              chartData={barData}
-            />
-            <PieChartCard
-              columns={columns}
-              pieKey={pieKey}
-              onPieKeyChange={setPieKey}
-              chartData={pieData}
-            />
-          </Box>
-        )}
-      </Box>
+      {/* ── Column pills tray ───────────────────────── */}
+      {hasData && (
+        <div className="charts-columns-tray">
+          <span className="charts-tray-label">Columns</span>
+          <div className="charts-column-pills">
+            {columns.map(col => (
+              <div
+                key={col}
+                className="chart-col-pill"
+                draggable
+                onDragStart={e => e.dataTransfer.setData("text/plain", col)}
+              >
+                {col}
+              </div>
+            ))}
+          </div>
+          <span className="charts-tray-hint">Drag a column onto a chart axis</span>
+        </div>
+      )}
+
+      {/* ── Chart cards ─────────────────────────────── */}
+      {hasData && (
+        <div className="charts-cards-row">
+          {/* Bar chart card */}
+          <div className="chart-card">
+            <div className="chart-card-header">
+              <span className="chart-card-title">Bar Chart</span>
+              <div className="chart-drop-zones">
+                <div className="chart-drop-zone-group">
+                  <span className="drop-zone-label">X Axis</span>
+                  <DropZone
+                    label="Drop column ↓"
+                    assignedCol={xKey}
+                    onDrop={setXKey}
+                  />
+                </div>
+                <div className="chart-drop-zone-group">
+                  <span className="drop-zone-label">Y Axis</span>
+                  <DropZone
+                    label="Drop column ↓"
+                    assignedCol={barYKey}
+                    onDrop={setBarYKey}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="chart-card-body">
+              <ResponsiveBarChart chartData={barData} xKey={xKey} yKey={barYKey} />
+            </div>
+          </div>
+
+          {/* Pie chart card */}
+          <div className="chart-card">
+            <div className="chart-card-header">
+              <span className="chart-card-title">Pie Chart</span>
+              <div className="chart-drop-zones">
+                <div className="chart-drop-zone-group">
+                  <span className="drop-zone-label">Label Key</span>
+                  <DropZone
+                    label="Drop column ↓"
+                    assignedCol={pieKey}
+                    onDrop={setPieKey}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="chart-card-body">
+              <ResponsivePieChart chartData={pieData} groupByKey={pieKey} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!hasData && (
+        <div className="charts-empty">
+          <div className="charts-empty-icon">📊</div>
+          <p>Run a query to load data and build charts</p>
+        </div>
+      )}
 
       <SuccessSnackbar
         open={snackbar.open}

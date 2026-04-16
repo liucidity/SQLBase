@@ -1,22 +1,27 @@
 const deepCopy = dataStructure => JSON.parse(JSON.stringify(dataStructure));
 
-const generateReference = reference => {
-  if (!reference) return null;
-  return `INTEGER REFERENCES ${reference}(id) ON DELETE CASCADE`;
-};
-
 const generateSQL = tables => {
   let result = [];
-  tables.map(table => {
-    let output = `CREATE TABLE ${table.table} (
-        id SERIAL PRIMARY KEY NOT NULL,
-        `;
-    table.fields.map(field => {
-      output += `${field.fieldName || ""} ${field.dataType || ""}${field.varcharSize ? "(" + field.varcharSize + ")" : ""} ${generateReference(field.reference) || ""
-        } ${field.mod1 || ""} ${field.mod2 || ""} ${field.default ? "DEFAULT '" + field.default + "'" : ""
-        },\n        `;
+  tables.forEach(table => {
+    const lines = [
+      `CREATE TABLE ${table.table} (`,
+      `    id SERIAL PRIMARY KEY NOT NULL`,
+    ];
+    table.fields.forEach(field => {
+      if (!field.fieldName) return;
+      const parts = [field.fieldName];
+      if (field.reference) {
+        parts.push(`INTEGER REFERENCES ${field.reference}(id) ON DELETE CASCADE`);
+      } else {
+        const type = `${field.dataType || ''}${field.varcharSize ? '(' + field.varcharSize + ')' : ''}`;
+        if (type) parts.push(type);
+      }
+      if (field.mod1) parts.push(field.mod1);
+      if (field.mod2) parts.push(field.mod2);
+      if (field.default) parts.push(`DEFAULT '${field.default}'`);
+      lines.push(`    ${parts.join(' ')}`);
     });
-    result.push(output.replace(/,\n {6} *$/, "\n);\n"));
+    result.push(lines.join(',\n') + '\n);\n');
   });
   return result;
 };

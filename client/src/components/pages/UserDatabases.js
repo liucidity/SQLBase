@@ -1,26 +1,11 @@
-import { React, useState, useEffect } from "react";
-import { Button, Container } from "@mui/material";
+import React, { useState, useEffect } from "react";
 import useDatabase from "../../state/hooks/useDatabase";
 import { useNavigate } from "react-router-dom";
-import { ThemeProvider } from "@emotion/react";
-import theme from "../../styles/theme/theme.js";
-import useSchemaState from "../../state/hooks/useSchemaState";
-import "./UserDatabases.scss";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
-import DownloadIcon from "@mui/icons-material/Download";
-import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import SuccessSnackbar from "../snackbars/SuccessSnackbar";
+import "./UserDatabases.scss";
 
 const UserDatabases = () => {
-  const { handleSchemaChange } = useSchemaState();
-
-  const {
-    createNewState,
-    loadDatabase,
-    deleteDatabase,
-    getDatabases,
-  } = useDatabase();
-
+  const { createNewState, loadDatabase, deleteDatabase, getDatabases } = useDatabase();
   const [list, setList] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", isError: false });
   const navigate = useNavigate();
@@ -41,86 +26,92 @@ const UserDatabases = () => {
     fetchDatabaseList();
   }, []);
 
-  const buttonHandler = async (target, uuid, listIndex, databaseName) => {
-    if (target === "load") {
-      try {
-        await loadDatabase(uuid);
-        navigate("/tables");
-      } catch (err) {
-        showSnackbar(err?.response?.data?.error || "Failed to load database.", true);
-      }
-    }
-    if (target === "delete") {
-      try {
-        await deleteDatabase(databaseName, uuid);
-        const newList = [...list];
-        newList.splice(listIndex, 1);
-        setList(newList);
-        showSnackbar(`"${databaseName}" deleted.`);
-      } catch (err) {
-        showSnackbar(err?.response?.data?.error || "Failed to delete database.", true);
-      }
-    }
-    if (target === "create") {
-      createNewState();
+  const handleLoad = async uuid => {
+    try {
+      await loadDatabase(uuid);
       navigate("/tables");
+    } catch (err) {
+      showSnackbar(err?.response?.data?.error || "Failed to load database.", true);
     }
   };
 
-  return (
-    <main>
-      <ThemeProvider theme={theme}>
-        <Container id="user-database-container" maxWidth="false">
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<AddCircleIcon />}
-            onClick={() => buttonHandler("create")}
-          >
-            New Database
-          </Button>
+  const handleDelete = async (databaseName, uuid, listIndex) => {
+    try {
+      await deleteDatabase(databaseName, uuid);
+      setList(prev => prev.filter((_, i) => i !== listIndex));
+      showSnackbar(`"${databaseName}" deleted.`);
+    } catch (err) {
+      showSnackbar(err?.response?.data?.error || "Failed to delete database.", true);
+    }
+  };
 
-          <div id="database-list">
-            {list &&
-              list.map((data, listIndex) => {
-                let parsed;
-                try { parsed = JSON.parse(data.global_state); } catch { return null; }
-                if (!parsed) return null;
-                const uuid = parsed.databaseUuid;
-                const databaseName = parsed.databaseName;
-                return (
-                  <div className="database-items" key={uuid}>
-                    <div className="database-name">
-                      <h3>{databaseName}</h3>
-                    </div>
-                    <div className="database-buttons">
-                      <Button
-                        variant="outlined"
-                        color="primary"
-                        size="small"
-                        startIcon={<DownloadIcon />}
-                        onClick={() => buttonHandler("load", uuid)}
-                      >
-                        Load
-                      </Button>
-                      <Button
-                        variant="outlined"
-                        color="error"
-                        size="small"
-                        startIcon={<DeleteForeverIcon />}
-                        onClick={() =>
-                          buttonHandler("delete", uuid, listIndex, databaseName)
-                        }
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </Container>
-      </ThemeProvider>
+  const handleCreate = () => {
+    createNewState();
+    navigate("/tables");
+  };
+
+  const parsedList = list.map((data, index) => {
+    let parsed;
+    try { parsed = JSON.parse(data.global_state); } catch { return null; }
+    if (!parsed) return null;
+    return { ...parsed, _index: index, _raw: data };
+  }).filter(Boolean);
+
+  return (
+    <main className="databases-canvas">
+      <div className="databases-header">
+        <div className="databases-header-left">
+          <h1 className="databases-title">My Databases</h1>
+          <span className="databases-count">
+            {parsedList.length} database{parsedList.length !== 1 ? "s" : ""}
+          </span>
+        </div>
+        <button className="new-db-btn" onClick={handleCreate}>
+          + New Database
+        </button>
+      </div>
+
+      {parsedList.length === 0 ? (
+        <div className="databases-empty">
+          <div className="databases-empty-icon">🗄</div>
+          <h2>No databases yet</h2>
+          <p>Create your first database to get started.</p>
+          <button className="new-db-btn" onClick={handleCreate}>
+            + New Database
+          </button>
+        </div>
+      ) : (
+        <div className="databases-grid">
+          {parsedList.map((db) => (
+            <div key={db.databaseUuid} className="database-card">
+              <div className="database-card-body">
+                <div className="database-card-name">{db.databaseName}</div>
+                <div className="database-card-meta">
+                  <span className="db-status-badge active">active</span>
+                  <span className="db-table-count">
+                    {(db.schemaState || []).length} table{(db.schemaState || []).length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+              </div>
+              <div className="database-card-actions">
+                <button
+                  className="db-load-btn"
+                  onClick={() => handleLoad(db.databaseUuid)}
+                >
+                  Load →
+                </button>
+                <button
+                  className="db-delete-btn"
+                  onClick={() => handleDelete(db.databaseName, db.databaseUuid, db._index)}
+                  title="Delete database"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       <SuccessSnackbar
         open={snackbar.open}

@@ -1,85 +1,228 @@
-/* ─── User Databases page ─────────────────────────── */
-main {
+/* ─── Databases page canvas ────────────────────────── */
+.databases-canvas {
   padding: 32px;
-  background: var(--bg);
   min-height: 100vh;
-  width: 100%;
-  box-shadow: none;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
-  #user-database-container {
+/* ─── Header ───────────────────────────────────────── */
+.databases-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  .databases-header-left {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
-    padding: 0 !important;
-    max-width: 720px !important;
+    align-items: baseline;
+    gap: 10px;
+  }
 
-    > button {
-      align-self: flex-start;
-    }
+  .databases-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0;
+  }
+
+  .databases-count {
+    font-size: 12px;
+    color: var(--text-muted);
   }
 }
 
-/* ─── Database list ───────────────────────────────── */
-#database-list {
+/* ─── New database button ──────────────────────────── */
+.new-db-btn {
+  padding: 8px 18px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+
+  &:hover {
+    background: var(--accent-hover);
+  }
+}
+
+/* ─── Database grid ────────────────────────────────── */
+.databases-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+/* ─── Database card ────────────────────────────────── */
+.database-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    border-color: #c7d2fe;
+    box-shadow: 0 2px 12px rgba(99, 102, 241, 0.07);
+  }
+
+  .database-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .database-card-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .database-card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .db-table-count {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .database-card-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+}
+
+/* ─── Status badge ─────────────────────────────────── */
+.db-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+
+  &.active {
+    background: #dcfce7;
+    color: #15803d;
+  }
+
+  &.inactive {
+    background: var(--surface);
+    color: var(--text-muted);
+  }
+}
+
+/* ─── Card action buttons ──────────────────────────── */
+.db-load-btn {
+  padding: 6px 14px;
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  background: none;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--accent);
+    color: #fff;
+  }
+}
+
+.db-delete-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: #fee2e2;
+    color: var(--danger);
+  }
+}
+
+/* ─── Empty state ──────────────────────────────────── */
+.databases-empty {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  width: 100%;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 0;
+  text-align: center;
+  color: var(--text-muted);
 
-  .database-items {
-    width: 100%;
-    margin: 0;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    background: #fff;
-    border: 1px solid var(--border);
-    padding: 16px 20px;
-    border-radius: var(--radius);
-    transition: border-color 0.15s;
+  .databases-empty-icon {
+    font-size: 56px;
+    margin-bottom: 20px;
+    opacity: 0.4;
+  }
 
-    &:hover {
-      border-color: #c7d2fe;
-    }
+  h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+    margin: 0 0 8px;
+  }
 
-    .database-name {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-
-      h3 {
-        margin: 0;
-        font-size: 15px;
-        font-weight: 600;
-        color: var(--text);
-      }
-    }
-
-    .database-buttons {
-      display: flex;
-      flex-direction: row;
-      gap: 8px;
-
-      button {
-        margin: 0;
-        box-shadow: none !important;
-      }
-    }
+  p {
+    font-size: 14px;
+    margin: 0 0 24px;
+    color: var(--text-muted);
   }
 }
 
 /* ─── Responsive ──────────────────────────────────── */
-@media (max-width: 600px) {
-  main { padding: 16px; }
+@media (max-width: 900px) {
+  .databases-canvas {
+    padding: 20px 16px;
+  }
 
-  .database-items {
+  .databases-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .databases-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+  }
 
-    .database-buttons {
+  .database-card {
+    flex-wrap: wrap;
+
+    .database-card-actions {
       width: 100%;
+      justify-content: flex-end;
     }
   }
 }

@@ -118,6 +118,7 @@ function ConstraintChips({ field, tableIndex, fieldIndex, handleChange, referenc
                 className={`fk-opt${field.reference === ref.value ? " selected" : ""}`}
                 onClick={() => {
                   handleChange({ target: { value: ref.value } }, "reference", tableIndex, fieldIndex);
+                  handleChange({ target: { value: "INT" } }, "dataType", tableIndex, fieldIndex);
                   setFKOpen(false);
                 }}
               >
@@ -181,7 +182,7 @@ function FieldRow({ field, fieldIndex, tableIndex, handleChange, removeField, re
           onChange={e => handleChange(e, "fieldName", tableIndex, fieldIndex)}
         />
         <TypePill
-          value={field.dataType}
+          value={field.reference ? "INT" : field.dataType}
           disabled={Boolean(field.reference)}
           onChange={val =>
             handleChange({ target: { value: val } }, "dataType", tableIndex, fieldIndex)

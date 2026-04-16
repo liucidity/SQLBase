@@ -20,19 +20,50 @@ function parseSQLToSchema(sql) {
   while ((m = re.exec(sql)) !== null) {
     const tableName = m[1];
     const body = m[2];
-    const lines = body.split('\n').map(l => l.trim()).filter(Boolean);
+    // Merge continuation lines (REFERENCES, ON DELETE/UPDATE) onto their preceding line
+    // so multi-line FK constraints become a single line before parsing
+    const rawLines = body.split('\n').map(l => l.trim()).filter(Boolean);
+    const mergedLines = [];
+    for (const rawLine of rawLines) {
+      const stripped = rawLine.replace(/,\s*$/, '').trim();
+      if (
+        /^REFERENCES\b/i.test(stripped) ||
+        /^ON\s+(DELETE|UPDATE)\b/i.test(stripped)
+      ) {
+        if (mergedLines.length > 0) {
+          mergedLines[mergedLines.length - 1] += ' ' + stripped;
+        }
+      } else {
+        mergedLines.push(stripped);
+      }
+    }
+
     const fields = [];
-    for (const rawLine of lines) {
-      const line = rawLine.replace(/,\s*$/, '').trim();
+    const pendingFKs = []; // { col, refTable } from table-level FOREIGN KEY constraints
+
+    for (const line of mergedLines) {
       if (!line) continue;
+      // Skip auto-generated id field
       if (/^id\s+SERIAL\s+PRIMARY\s+KEY/i.test(line)) continue;
+      // Skip CONSTRAINT declarations
       if (/^CONSTRAINT\b/i.test(line)) continue;
+      // Handle table-level FOREIGN KEY (col) REFERENCES table(col)
+      const fkConstraint = line.match(/^FOREIGN\s+KEY\s*\(\s*(\w+)\s*\)\s+REFERENCES\s+(\w+)\s*\(/i);
+      if (fkConstraint) {
+        pendingFKs.push({ col: fkConstraint[1], refTable: fkConstraint[2] });
+        continue;
+      }
+      // Skip other table-level constraints that start with SQL keywords
+      if (/^(PRIMARY|UNIQUE|CHECK|INDEX|KEY)\b/i.test(line)) continue;
+
       const nameMatch = line.match(/^(\w+)\s+(.*)/);
       if (!nameMatch) continue;
       const fieldName = nameMatch[1];
       let rest = nameMatch[2].trim();
       let dataType = '', varcharSize = '', reference = '';
-      const fkMatch = rest.match(/^INTEGER\s+REFERENCES\s+(\w+)\s*\([^)]*\)/i);
+
+      // Inline FK: col INTEGER REFERENCES table(id)  OR  col INT REFERENCES table(id)
+      const fkMatch = rest.match(/^(?:INTEGER|INT)\s+REFERENCES\s+(\w+)\s*\([^)]*\)/i);
       if (fkMatch) {
         dataType = 'INT';
         reference = fkMatch[1];
@@ -44,6 +75,7 @@ function parseSQLToSchema(sql) {
         varcharSize = typeMatch[2] || '';
         rest = typeMatch[3] ? typeMatch[3].trim() : '';
       }
+
       const constraints = [];
       if (/PRIMARY\s+KEY/i.test(rest)) constraints.push('PRIMARY KEY');
       if (/NOT\s+NULL/i.test(rest)) constraints.push('NOT NULL');
@@ -52,9 +84,21 @@ function parseSQLToSchema(sql) {
       fields.push({
         fieldName, dataType, varcharSize,
         mod1: constraints[0] || '', mod2: constraints[1] || '',
-        default: defaultMatch ? defaultMatch[1] : '', reference,
+        default: defaultMatch ? defaultMatch[1] : '',
+        reference,
+        relationType: 'one-to-many',
       });
     }
+
+    // Apply table-level FK constraints: find the column and set its reference
+    pendingFKs.forEach(({ col, refTable }) => {
+      const field = fields.find(f => f.fieldName === col);
+      if (field) {
+        field.reference = refTable;
+        if (!field.dataType) field.dataType = 'INT';
+      }
+    });
+
     tables.push({ table: tableName, fields });
   }
   return tables;

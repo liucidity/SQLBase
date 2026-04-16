@@ -30,6 +30,15 @@ const useDatabase = () => {
     await axios.post(`/api/tables`, { databaseName, globalStateString, databaseUuid });
   };
 
+  // save with an explicit state override (needed when React dispatch hasn't settled yet)
+  const saveProgressWithState = async (overrideState) => {
+    const s = overrideState || state;
+    const globalStateString = JSON.stringify(s);
+    const databaseName = s.databaseName;
+    const databaseUuid = s.databaseUuid;
+    await axios.post(`/api/tables`, { databaseName, globalStateString, databaseUuid });
+  };
+
   // loads last created state into state
   const loadProgress = async () => {
     const { data } = await axios.get(`/api/tables`);
@@ -83,6 +92,7 @@ const useDatabase = () => {
   return {
     state,
     saveProgress,
+    saveProgressWithState,
     createNewState,
     loadProgress,
     loadDatabase,

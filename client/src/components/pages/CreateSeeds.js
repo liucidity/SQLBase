@@ -1,45 +1,47 @@
 import React, { useState } from "react";
-import { Button, Box } from "@mui/material";
-import "../forms/SeedsForm.scss";
+import { CopyBlock } from "react-code-blocks";
+import { sqlTheme } from "../../helpers/sqlTheme";
 import useSeedState from "../../state/hooks/useSeedState";
 import useDatabase from "../../state/hooks/useDatabase";
-import useGlobalState from "../../state/hooks/useGlobalState";
-import { numRowsDropdown } from "../../state/data_structures/seedState";
 import SeedsForm from "../forms/SeedsForm";
 import SeedsModal from "../modal/SeedsModal";
-import { CopyBlock, monokai } from "react-code-blocks";
 import { generateSeedSQL } from "../../helpers/seedFormHelpers";
-import SaveIcon from "@mui/icons-material/Save";
-import DownloadIcon from "@mui/icons-material/Download";
-import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 import SuccessSnackbar from "../snackbars/SuccessSnackbar";
+import "../forms/SeedsForm.scss";
+import "../forms/SchemaForm.scss";
 
 const CreateSeedsPage = () => {
   const { state, generateSeedState } = useSeedState();
-  const { getTableNames } = useGlobalState();
-  const { saveProgress, loadProgress, seedDatabase } = useDatabase();
+  const { saveProgress, seedDatabase } = useDatabase();
 
-  const tableNameList = getTableNames();
   const table = state.schemaState;
   const seeds = state.seedState;
-  let seedString = generateSeedSQL(seeds);
+  const seedSQL = generateSeedSQL(seeds);
 
   const [isOpen, setIsOpen] = useState({ modal: false, table: null });
+  const [seeding, setSeeding] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", isError: false });
 
   const showSnackbar = (message, isError = false) =>
     setSnackbar({ open: true, message, isError });
   const closeSnackbar = () => setSnackbar(s => ({ ...s, open: false }));
 
-  const buttonHandler = table => setIsOpen({ modal: true, table });
-  const handleClose = () => isOpen && setIsOpen(false);
+  const buttonHandler = t => setIsOpen({ modal: true, table: t });
+  const handleClose = () => setIsOpen({ modal: false, table: null });
 
   const handleSeed = async () => {
+    if (!state.databaseName) {
+      showSnackbar("No database loaded.", true);
+      return;
+    }
+    setSeeding(true);
     try {
-      await seedDatabase(state.databaseName, seedString);
+      await seedDatabase(state.databaseName, seedSQL);
       showSnackbar("Database seeded successfully.");
     } catch (err) {
       showSnackbar(err?.response?.data?.error || "Failed to seed database.", true);
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -52,11 +54,19 @@ const CreateSeedsPage = () => {
     }
   };
 
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(seedSQL);
+      showSnackbar("SQL copied to clipboard.");
+    } catch {
+      showSnackbar("Failed to copy.", true);
+    }
+  };
+
   return (
-    <main id="seedsMain">
+    <main className="split-canvas">
       {isOpen.modal && (
         <SeedsModal
-          id="seedsModal"
           open={isOpen}
           onClick={handleClose}
           table={isOpen.table}
@@ -64,56 +74,50 @@ const CreateSeedsPage = () => {
         />
       )}
 
-      <div id="seedsContainer">
-        <form id="seedsForm">
-          <label id="seedsFormTitle">Seed Database</label>
+      {/* ── Left Panel ─────────────────────────────── */}
+      <div className="split-left">
+        <div className="split-left-header">
+          <span className="split-db-name">{state.databaseName || "No database loaded"}</span>
+        </div>
+
+        <div className="tables-list">
           <SeedsForm
-            key="SeedsForm"
-            tableNameList={tableNameList}
-            numRowsDropdown={numRowsDropdown}
             table={table}
             buttonHandler={buttonHandler}
             dropDownHandler={generateSeedState}
           />
-        </form>
-        <div id="seedsDemo">
+
+          <button
+            className="seed-all-btn"
+            onClick={handleSeed}
+            disabled={seeding || !table || table.length === 0}
+          >
+            {seeding ? "Seeding…" : "⚡ Seed All Tables"}
+          </button>
+        </div>
+      </div>
+
+      {/* ── Right Panel ────────────────────────────── */}
+      <div className="split-right">
+        <div className="split-right-header">
+          <span className="right-panel-title">SQL Preview</span>
+        </div>
+
+        <div className="sql-panel">
           <CopyBlock
-            key="CopyBlock-seeds"
             language="sql"
-            text={generateSeedSQL(seeds)}
-            theme={monokai}
+            text={seedSQL || "-- Configure tables and row counts to preview INSERT SQL"}
+            theme={sqlTheme}
             wrapLines={true}
             codeBlock
           />
         </div>
-      </div>
 
-      <Box id="seeds-buttons">
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AutoFixHighIcon />}
-          onClick={handleSeed}
-        >
-          Seed
-        </Button>
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<SaveIcon />}
-          onClick={handleSave}
-        >
-          Save
-        </Button>
-        <Button
-          variant="outlined"
-          color="primary"
-          startIcon={<DownloadIcon />}
-          onClick={() => loadProgress()}
-        >
-          Load
-        </Button>
-      </Box>
+        <div className="right-panel-actions">
+          <button className="action-btn" onClick={handleCopy}>⎘ Copy SQL</button>
+          <button className="action-btn" onClick={handleSave}>↑ Save</button>
+        </div>
+      </div>
 
       <SuccessSnackbar
         open={snackbar.open}

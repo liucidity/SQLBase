@@ -1,149 +1,554 @@
-/* ─── Queries page layout ─────────────────────────── */
-main {
-  padding: 32px;
-  background: var(--bg);
-  min-height: 100vh;
+/* ─── Query builder card ───────────────────────────── */
+.query-builder-card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
-  #container {
+/* ─── Card header (table selector) ────────────────── */
+.query-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+
+  .query-card-table-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    padding-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .table-chip-row {
     display: flex;
-    flex-direction: column;
-    gap: 20px;
-    width: 100%;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+  }
 
-    #row-container {
-      display: flex;
-      flex-direction: row;
-      gap: 20px;
-      align-items: flex-start;
+  .query-remove-btn {
+    margin-left: auto;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--text-muted);
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
 
-      form {
-        flex: 3;
-        display: flex;
-        flex-direction: column;
-
-        .query-table {
-          border: 1px solid var(--border);
-          border-radius: var(--radius);
-          background: #fff;
-          padding: 20px;
-          box-shadow: none;
-
-          .field-inputs {
-            display: flex;
-            flex-direction: row;
-            gap: 6px;
-            align-items: center;
-            flex-wrap: wrap;
-
-            label {
-              white-space: nowrap;
-              font-size: 13px;
-              color: var(--text-muted);
-            }
-
-            div {
-              margin: 0;
-            }
-          }
-
-          .add-remove-button {
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-            margin-top: 12px;
-
-            button {
-              display: flex;
-              align-items: center;
-              gap: 4px;
-
-              div { margin-top: 0; }
-              svg { margin-right: 0; }
-            }
-          }
-        }
-      }
-
-      .query-demo {
-        flex: 2;
-        position: sticky;
-        top: 20px;
-        margin: 0;
-        width: auto;
-
-        div {
-          border-radius: var(--radius);
-          overflow: hidden;
-          padding: 0;
-          margin: 0;
-          height: auto;
-        }
-      }
+    &:hover {
+      background: #fee2e2;
+      color: var(--danger);
     }
   }
 }
 
-/* ─── DB name title ───────────────────────────────── */
-#query-database-title {
+/* ─── Table chips ──────────────────────────────────── */
+.table-chip {
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+}
+
+/* ─── Columns section ──────────────────────────────── */
+.query-columns-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.query-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+}
+
+/* Available column chips to add */
+.col-add-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.col-available-chip {
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover:not(.added) {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &.added {
+    background: var(--accent-light);
+    border-color: #c7d2fe;
+    color: var(--accent);
+    cursor: default;
+  }
+}
+
+/* Selected columns list */
+.selected-cols-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+
+.selected-col-row {
   display: flex;
   align-items: center;
-  margin-bottom: 4px;
-  height: auto;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--surface);
+  border-radius: 6px;
+  border: 1px solid var(--border);
 
-  p {
-    font-size: 1.4rem;
-    font-weight: 700;
+  .selected-col-name {
+    font-size: 13px;
+    font-weight: 600;
     color: var(--text);
-    margin: 0;
+    font-family: monospace;
+    min-width: 80px;
   }
-}
 
-/* ─── Action bars ─────────────────────────────────── */
-#query-add-copy-buttons {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  padding-top: 4px;
-
-  button {
-    margin: 0 !important;
-    width: auto !important;
-    box-shadow: none !important;
-    div { margin-left: 6px; margin-top: 0; }
+  .agg-chips {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    flex: 1;
   }
-}
 
-#query-buttons {
-  display: flex;
-  flex-direction: row;
-  gap: 12px;
-  justify-content: flex-end;
-  padding: 24px 0 8px;
-  width: 100%;
-  align-self: unset;
+  .col-remove-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-muted);
+    padding: 2px 5px;
+    border-radius: 4px;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+    margin-left: auto;
 
-  button {
-    min-width: unset;
-    box-shadow: none !important;
-    div { margin-left: 6px; margin-top: 0; }
-  }
-}
-
-/* ─── Responsive ──────────────────────────────────── */
-@media (max-width: 900px) {
-  main {
-    padding: 16px;
-
-    #container #row-container {
-      flex-direction: column;
-
-      form { flex: unset; width: 100%; }
-      .query-demo { flex: unset; width: 100%; position: static; }
+    &:hover {
+      background: #fee2e2;
+      color: var(--danger);
     }
   }
+}
 
-  #query-buttons {
-    justify-content: flex-start;
-    flex-wrap: wrap;
+/* Aggregate chips */
+.agg-chip {
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+}
+
+/* ─── Collapsible section ──────────────────────────── */
+.query-section {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+
+  &.open {
+    .section-toggle {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+  }
+}
+
+.section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-muted);
+  text-align: left;
+  transition: background 0.15s;
+
+  &:hover {
+    background: var(--surface);
+  }
+
+  .section-chevron {
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+}
+
+.section-body {
+  padding: 12px;
+}
+
+/* ─── WHERE section ────────────────────────────────── */
+.where-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.condition-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.condition-remove-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  font-size: 16px;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: #fee2e2;
+    color: var(--danger);
+  }
+}
+
+.condition-input {
+  flex: 1;
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: monospace;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: var(--accent);
+  }
+
+  &::placeholder {
+    color: var(--text-muted);
+  }
+}
+
+.add-condition-btn {
+  align-self: flex-start;
+  padding: 5px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  background: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+/* ─── ORDER BY section ─────────────────────────────── */
+.orderby-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.orderby-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1;
+}
+
+.orderby-chip {
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &.active {
+    background: var(--accent-light);
+    border-color: #c7d2fe;
+    color: var(--accent);
+  }
+}
+
+.order-direction {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.direction-btn {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+}
+
+/* ─── LIMIT row ────────────────────────────────────── */
+.limit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .limit-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+  }
+
+  .limit-input {
+    width: 80px;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    color: var(--text);
+    background: #fff;
+    outline: none;
+    transition: border-color 0.15s;
+
+    &:focus {
+      border-color: var(--accent);
+    }
+  }
+}
+
+/* ─── Hints / empty states ─────────────────────────── */
+.query-empty-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 4px 0;
+}
+
+/* ─── Add query button ─────────────────────────────── */
+.add-query-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius);
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 0.15s, color 0.15s;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+}
+
+/* ─── Results table ────────────────────────────────── */
+.query-results-wrap {
+  margin-top: 16px;
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.query-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+
+  .results-count {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  .export-csv-btn {
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: none;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: #fff;
+    }
+  }
+}
+
+.query-results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: monospace;
+
+  th {
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    color: rgba(255, 255, 255, 0.5);
+    text-align: left;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    white-space: nowrap;
+  }
+
+  td {
+    padding: 6px 12px;
+    color: rgba(255, 255, 255, 0.85);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  tr:nth-child(even) td {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+/* ─── Run query button (right panel) ──────────────── */
+.run-query-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px;
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.15s;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 }

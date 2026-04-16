@@ -30,7 +30,7 @@ export const generateSeedSQL = seedState => {
           values += ` (${typeof value === "number" ? value : "'" + value + "'"}, `;
         } else if (k === Object.keys(dataset).length - 1) {
           j === seedData.length - 1
-            ? (values += `${typeof value === "number" ? value : "'" + value + "'"}`)
+            ? (values += `${typeof value === "number" ? value : "'" + value + "'"})`)
             : (values += `${typeof value === "number" ? value : "'" + value + "'"}),\n                  `);
         } else {
           values += `${typeof value === "number" ? value : "'" + value + "'"}, `;

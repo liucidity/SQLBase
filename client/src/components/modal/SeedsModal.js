@@ -26,6 +26,7 @@ const style = {
   bgcolor: "#21222c",
   boxShadow: 24,
   pt: 4,
+  px: 3,
   borderRadius: 8,
   display: "flex",
   flexDirection: "column",
