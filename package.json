@@ -1,4 +1,14 @@
 {
+  "name": "sqlbase",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd client && npm install && npm run build && cd ../express && npm install --omit=dev",
+    "start": "node express/server.js",
+    "dev": "cd express && npm run dev"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "tsparticles": "^2.3.4"
   }
