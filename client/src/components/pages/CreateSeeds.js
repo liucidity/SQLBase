@@ -20,6 +20,7 @@ const CreateSeedsPage = () => {
   const seedSQL = generateSeedSQL(seeds, state.schemaState);
 
   const [dbList, setDbList] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
   const hasRealDb = state.databaseName && state.databaseName !== "database_name" && state.dbCreated;
 
   useEffect(() => {
@@ -81,11 +82,15 @@ const CreateSeedsPage = () => {
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       await saveProgress();
       showSnackbar("Progress saved.");
     } catch (err) {
       showSnackbar(err?.response?.data?.error || "Failed to save.", true);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -206,7 +211,7 @@ const CreateSeedsPage = () => {
               ⌥ Format SQL
             </button>
           )}
-          <button className="action-btn" onClick={handleSave}>↑ Save</button>
+          <button className="action-btn" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving…' : '↑ Save'}</button>
         </div>
       </div>
 

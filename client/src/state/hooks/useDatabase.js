@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useCallback } from "react";
 import { GlobalContext } from "../GlobalStateProvider";
 import axios from "axios";
 
@@ -87,10 +87,10 @@ const useDatabase = () => {
   };
 
   //Retrieves List of databases found in Core database
-  const getDatabases = async () => {
+  const getDatabases = useCallback(async () => {
     const { data } = await axios.get(`/api/databases`);
     return data;
-  };
+  }, []);
 
   const getSavedQueries = async (databaseUuid) => {
     const { data } = await axios.get(`/api/savedQueries`, { params: { databaseUuid } });

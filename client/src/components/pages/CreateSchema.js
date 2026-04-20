@@ -167,6 +167,8 @@ const CreateSchemaPage = () => {
   const templateRef = useRef(null);
   const [sqlFormatted, setSqlFormatted] = useState(false);
   const [erdVisible, setErdVisible] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [erdHeight, setErdHeight] = useState(240);
   const debounceRef = useRef(null);
   const isDragging = useRef(false);
@@ -179,12 +181,12 @@ const CreateSchemaPage = () => {
       .then(data => {
         const names = data
           .map(item => { try { return JSON.parse(item.global_state); } catch { return null; } })
-          .filter(db => db && db.databaseName)
+          .filter(db => db && db.databaseName && db.dbCreated)
           .map(db => db.databaseName);
         setExistingDbNames(names);
       })
       .catch(() => {});
-  }, []);
+  }, [getDatabases]);
 
   // Close template picker on outside click
   useEffect(() => {
@@ -260,10 +262,12 @@ const CreateSchemaPage = () => {
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
     if (state.databaseName === 'database_name') {
       showSnackbar('Rename the database before saving — "database_name" is the default placeholder.', true);
       return;
     }
+    setIsSaving(true);
     try {
       if (expertMode) {
         const parsed = parseSQLToSchema(sqlText);
@@ -278,6 +282,8 @@ const CreateSchemaPage = () => {
       showSnackbar('Progress saved.');
     } catch {
       showSnackbar('Failed to save.', true);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -295,6 +301,7 @@ const CreateSchemaPage = () => {
   };
 
   const handleCreate = async () => {
+    if (isCreating) return;
     if (state.databaseName === 'database_name') {
       showSnackbar('Rename the database before creating — "database_name" is the default placeholder.', true);
       return;
@@ -306,6 +313,7 @@ const CreateSchemaPage = () => {
       showSnackbar(`A database named "${state.databaseName}" already exists. Choose a different name.`, true);
       return;
     }
+    setIsCreating(true);
     try {
       const sql = expertMode ? sqlText : allSQL;
       if (expertMode) {
@@ -318,6 +326,8 @@ const CreateSchemaPage = () => {
       setExistingDbNames(prev => [...prev, state.databaseName]);
     } catch (err) {
       showSnackbar(err?.response?.data?.error || 'Failed to create database.', true);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -471,7 +481,7 @@ const CreateSchemaPage = () => {
               ⌥ Format SQL
             </button>
           )}
-          <button className="action-btn" onClick={handleSave}>↑ Save</button>
+          <button className="action-btn" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving…' : '↑ Save'}</button>
           <button
             className={`action-btn erd-toggle-btn${erdVisible ? ' active' : ''}`}
             onClick={() => setErdVisible(v => !v)}
@@ -482,6 +492,7 @@ const CreateSchemaPage = () => {
             className="action-btn primary"
             onClick={handleCreate}
             disabled={
+              isCreating ||
               !/^[a-z0-9_]{1,63}$/.test(state.databaseName) ||
               state.databaseName === 'database_name'
             }

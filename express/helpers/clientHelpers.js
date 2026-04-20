@@ -1,56 +1,46 @@
 require("dotenv").config();
 const { Pool } = require("pg");
 
-// Resolve base connection config once at startup.
-// In production (Railway/Render), DATABASE_URL is provided; individual
-// env vars are used in local development.
-let baseConfig;
+let config;
 if (process.env.DATABASE_URL) {
-  const url = new URL(process.env.DATABASE_URL);
-  baseConfig = {
-    user: url.username,
-    password: url.password,
-    host: url.hostname,
-    port: parseInt(url.port, 10) || 5432,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+  config = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
   };
 } else {
-  baseConfig = {
+  config = {
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT, 10),
+    database: process.env.DB_NAME,
   };
 }
 
-// Keyed pool map: one small Pool per user database name.
-// Avoids a new TCP connection on every request while bounding
-// total connections (max: 3 per user DB).
-const pools = {};
+const masterPool = new Pool({ ...config, max: 10, idleTimeoutMillis: 30000 });
 
-const getPool = (databaseName) => {
-  if (!pools[databaseName]) {
-    pools[databaseName] = new Pool({
-      ...baseConfig,
-      database: databaseName,
-      max: 3,
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
-    });
+masterPool.on("error", (err) => {
+  console.error("Master pool error:", err.message);
+});
 
-    pools[databaseName].on("error", (err) => {
-      console.error(`Pool error for database "${databaseName}":`, err.message);
-    });
-  }
-  return pools[databaseName];
-};
+// Returns a pool-like object scoped to a schema.
+// Each call checks out a client, sets search_path, runs the query,
+// then resets search_path before returning the client to the pool.
+const getPool = (schemaName) => ({
+  query: async (sql, params) => {
+    const client = await masterPool.connect();
+    try {
+      await client.query(`SET search_path = "${schemaName}", public`);
+      const result = params ? await client.query(sql, params) : await client.query(sql);
+      return result;
+    } finally {
+      await client.query(`SET search_path = public`);
+      client.release();
+    }
+  },
+});
 
-// Called when a user database is dropped so we don't hold stale pool connections.
-const releasePool = async (databaseName) => {
-  if (pools[databaseName]) {
-    await pools[databaseName].end().catch(() => {});
-    delete pools[databaseName];
-  }
-};
+// No-op: no per-schema pools to tear down.
+const releasePool = async (_schemaName) => {};
 
 module.exports = { getPool, releasePool };

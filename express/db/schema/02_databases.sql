@@ -1,7 +1,4 @@
-DROP TABLE IF EXISTS databases CASCADE;
-DROP TABLE IF EXISTS schema_forms CASCADE;
-DROP TABLE IF EXISTS query_forms CASCADE;
-CREATE TABLE databases(
+CREATE TABLE IF NOT EXISTS databases(
   id SERIAL PRIMARY KEY NOT NULL,
   database_uuid UUID NOT NULL,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -13,13 +10,13 @@ CREATE TABLE databases(
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT uuid_constraint UNIQUE (database_uuid)
 );
-CREATE TABLE schema_forms(
+CREATE TABLE IF NOT EXISTS schema_forms(
   id SERIAL PRIMARY KEY NOT NULL,
   database_id INTEGER REFERENCES databases(id) ON DELETE CASCADE,
   schema_form_json json,
   form_schema_string TEXT
 );
-CREATE TABLE query_forms(
+CREATE TABLE IF NOT EXISTS query_forms(
   id SERIAL PRIMARY KEY NOT NULL,
   database_id INTEGER REFERENCES databases(id) ON DELETE CASCADE,
   query_form_json json,

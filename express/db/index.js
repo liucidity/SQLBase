@@ -5,7 +5,7 @@ let config;
 if (process.env.DATABASE_URL) {
   config = {
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false,
   };
 } else {
   config = {
@@ -13,9 +13,19 @@ if (process.env.DATABASE_URL) {
   };
 }
 
-const client = new pg.Client(config);
+const pool = new pg.Pool({
+  ...config,
+  max: 5,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+});
 
-client.connect().then(() => {
+pool.on("error", (err) => {
+  console.error("Master DB pool error:", err.message);
+});
+
+// Verify connectivity at startup
+pool.query("SELECT 1").then(() => {
   const db = process.env.DATABASE_URL
     ? new URL(process.env.DATABASE_URL).pathname.slice(1)
     : process.env.DB_NAME;
@@ -25,4 +35,4 @@ client.connect().then(() => {
   process.exit(1);
 });
 
-module.exports = client;
+module.exports = pool;

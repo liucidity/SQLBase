@@ -20,6 +20,11 @@ const dbHelpers = require("./helpers/dbHelpers")(db);
 const dbSeedQueryHelpers = require("./helpers/virtualDBHelpers")(virtualDB);
 
 /**
+ * Trust proxy — required for express-rate-limit when behind a reverse proxy (Fly, nginx, etc.)
+ */
+app.set("trust proxy", 1);
+
+/**
  * Security middleware
  */
 app.use(helmet({
@@ -121,7 +126,26 @@ const normalizePort = val => {
 
 const port = normalizePort(process.env.PORT || "3001");
 app.set("port", port);
+
+// Start listening immediately so Fly's health check passes.
+// Migrations run in the background after startup — they are idempotent
+// (IF NOT EXISTS) so a failure just logs without crashing the server.
 server.listen(port);
+
+(async () => {
+  try {
+    const schemaDir = path.join(__dirname, "db/schema");
+    const files = fs.readdirSync(schemaDir).sort();
+    for (const file of files) {
+      const sql = fs.readFileSync(path.join(schemaDir, file), "utf8");
+      await db.query(sql);
+      console.log(`  migrated: ${file}`);
+    }
+    console.log("Migrations complete.");
+  } catch (err) {
+    console.error("Migration failed (non-fatal):", err.message);
+  }
+})();
 
 server.on("error", error => {
   if (error.syscall !== "listen") throw error;

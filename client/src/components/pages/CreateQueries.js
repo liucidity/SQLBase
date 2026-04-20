@@ -41,6 +41,7 @@ const CreateQueriesPage = () => {
   const allSQL = generateQuerySQL(queries).join("\n\n");
 
   const [dbList, setDbList] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
   const hasRealDb = state.databaseName && state.databaseName !== 'database_name' && state.dbCreated;
 
   useEffect(() => {
@@ -191,11 +192,15 @@ const CreateQueriesPage = () => {
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
+    setIsSaving(true);
     try {
       await saveProgress();
       showSnackbar("Progress saved.");
     } catch (err) {
       showSnackbar(err?.response?.data?.error || "Failed to save.", true);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -459,7 +464,7 @@ const CreateQueriesPage = () => {
           >
             ⌥ Format SQL
           </button>
-          <button className="action-btn" onClick={handleSave}>↑ Save State</button>
+          <button className="action-btn" onClick={handleSave} disabled={isSaving}>{isSaving ? 'Saving…' : '↑ Save State'}</button>
         </div>
       </div>
 
