@@ -26,6 +26,7 @@ const navItems = [
 
 const Layout = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const [state] = useContext(GlobalContext);
@@ -52,6 +53,7 @@ const Layout = () => {
 
   return (
     <div className={`app-shell${collapsed ? " collapsed" : ""}`}>
+      {/* ── Desktop sidebar ───────────────────────────── */}
       <aside className="sidebar">
         <div className="sidebar-header">
           {!collapsed && <span className="sidebar-logo">◈</span>}
@@ -101,9 +103,38 @@ const Layout = () => {
         )}
       </aside>
 
+      {/* ── Mobile top header ─────────────────────────── */}
+      <header className="mobile-header">
+        <span className="mobile-header-logo">◈</span>
+        <span className="mobile-header-title">SQLBase</span>
+        <div className={`mobile-db-chip${hasDb ? " active" : ""}`}>
+          <CircleIcon sx={{ fontSize: 7 }} />
+          <span>{hasDb ? dbName : "No DB"}</span>
+        </div>
+        {user && (
+          <button className="mobile-header-logout" onClick={handleLogout} title="Sign out">
+            <LogoutIcon sx={{ fontSize: 18 }} />
+          </button>
+        )}
+      </header>
+
       <div className="page-content">
         <Outlet />
       </div>
+
+      {/* ── Mobile bottom nav ─────────────────────────── */}
+      <nav className="mobile-bottom-nav">
+        {navItems.map(item => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`mobile-nav-item${location.pathname === item.path ? " active" : ""}`}
+          >
+            <span className="mobile-nav-icon">{item.icon}</span>
+            <span className="mobile-nav-label">{item.label}</span>
+          </Link>
+        ))}
+      </nav>
     </div>
   );
 };

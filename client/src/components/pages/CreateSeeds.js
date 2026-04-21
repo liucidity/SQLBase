@@ -53,6 +53,7 @@ const CreateSeedsPage = () => {
     setExpertMode(v => !v);
   };
 
+  const [mobilePanelTab, setMobilePanelTab] = useState('form');
   const [isOpen, setIsOpen] = useState({ modal: false, table: null });
   const [seeding, setSeeding] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", isError: false });
@@ -104,7 +105,7 @@ const CreateSeedsPage = () => {
   };
 
   return (
-    <main className="split-canvas">
+    <main className="split-canvas" data-mobile-tab={mobilePanelTab}>
       {isOpen.modal && (
         <SeedsModal
           open={isOpen}
@@ -113,6 +114,22 @@ const CreateSeedsPage = () => {
           seeds={seeds}
         />
       )}
+
+      {/* ── Mobile tab switcher ────────────────────── */}
+      <div className="mobile-panel-tabs">
+        <button
+          className={`mobile-panel-tab${mobilePanelTab === 'form' ? ' active' : ''}`}
+          onClick={() => setMobilePanelTab('form')}
+        >
+          ⊞ Seeds
+        </button>
+        <button
+          className={`mobile-panel-tab${mobilePanelTab === 'sql' ? ' active' : ''}`}
+          onClick={() => setMobilePanelTab('sql')}
+        >
+          ✎ SQL + Actions
+        </button>
+      </div>
 
       {/* ── Left Panel ─────────────────────────────── */}
       <div className="split-left pinned-footer">

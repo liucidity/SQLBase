@@ -136,6 +136,7 @@ const CreateQueriesPage = () => {
   const [queryResults, setQueryResults] = useState(null);
   const [resultColumns, setResultColumns] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: "", isError: false });
+  const [mobilePanelTab, setMobilePanelTab] = useState('form');
   const [history, setHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
 
@@ -220,7 +221,23 @@ const CreateQueriesPage = () => {
   };
 
   return (
-    <main className="split-canvas">
+    <main className="split-canvas" data-mobile-tab={mobilePanelTab}>
+      {/* ── Mobile tab switcher ────────────────────── */}
+      <div className="mobile-panel-tabs">
+        <button
+          className={`mobile-panel-tab${mobilePanelTab === 'form' ? ' active' : ''}`}
+          onClick={() => setMobilePanelTab('form')}
+        >
+          ⊞ Query Builder
+        </button>
+        <button
+          className={`mobile-panel-tab${mobilePanelTab === 'sql' ? ' active' : ''}`}
+          onClick={() => setMobilePanelTab('sql')}
+        >
+          ▷ SQL + Run
+        </button>
+      </div>
+
       {/* ── Left Panel ─────────────────────────────── */}
       <div className="split-left">
         <div className="split-left-header">

@@ -158,6 +158,7 @@ const CreateSchemaPage = () => {
 
   const { saveProgress, saveProgressWithState, createDatabase, getDatabases } = useDatabase();
 
+  const [mobilePanelTab, setMobilePanelTab] = useState('form');
   const [isNameFocused, setIsNameFocused] = useState(false);
   const [expertMode, setExpertMode] = useState(false);
   const [existingDbNames, setExistingDbNames] = useState([]);
@@ -334,7 +335,23 @@ const CreateSchemaPage = () => {
   const erdChart = generateMermaid(state.schemaState);
 
   return (
-    <main className="split-canvas">
+    <main className="split-canvas" data-mobile-tab={mobilePanelTab}>
+      {/* ── Mobile tab switcher ────────────────────── */}
+      <div className="mobile-panel-tabs">
+        <button
+          className={`mobile-panel-tab${mobilePanelTab === 'form' ? ' active' : ''}`}
+          onClick={() => setMobilePanelTab('form')}
+        >
+          ⊞ Schema
+        </button>
+        <button
+          className={`mobile-panel-tab${mobilePanelTab === 'sql' ? ' active' : ''}`}
+          onClick={() => setMobilePanelTab('sql')}
+        >
+          ✎ SQL + Actions
+        </button>
+      </div>
+
       {/* ── Left Panel ─────────────────────────────── */}
       <div className="split-left">
         <div className="split-left-header">

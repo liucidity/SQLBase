@@ -419,24 +419,215 @@ main.split-canvas {
   }
 }
 
-/* Mobile: tabs */
+/* Mobile tab bar — hidden on desktop */
+.mobile-panel-tabs {
+  display: none;
+}
+
+/* ─── Mobile field layout ─────────────────────────── */
 @media (max-width: 767px) {
+  /* Prevent any element from busting out of the card */
+  .split-left,
+  .schema-table-card,
+  .fields-list,
+  .field-row-wrap {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Field row: two rows instead of one long row */
+  .field-row {
+    flex-wrap: wrap;
+    gap: 6px 6px;
+    padding: 8px 0;
+    min-height: unset;
+    align-items: center;
+  }
+
+  /* Row 1: name input takes remaining width, remove btn pins right */
+  .field-name-input {
+    flex: 1 1 0;
+    min-width: 0;
+    order: 1;
+  }
+
+  /* Remove button stays on the same row as the name */
+  .field-remove-btn {
+    order: 2;
+    flex-shrink: 0;
+  }
+
+  /* Row 2: type pill + chips + advanced btn all on second line */
+  .type-pill-wrap {
+    order: 3;
+    flex-shrink: 0;
+  }
+
+  .constraint-chips {
+    order: 4;
+    flex: 1;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .advanced-btn {
+    order: 5;
+    flex-shrink: 0;
+  }
+
+  /* Make chips slightly smaller on mobile */
+  .constraint-chip {
+    padding: 4px 6px;
+    font-size: 10px;
+  }
+
+  /* Type pill slightly tighter */
+  .type-pill {
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+
+  /* Advanced panel scrolls horizontally if needed but don't overflow card */
+  .field-advanced {
+    flex-wrap: wrap;
+    gap: 6px;
+
+    input {
+      width: 80px;
+    }
+  }
+
+  /* Type popover: don't go off-screen */
+  .type-popover {
+    left: 0;
+    right: auto;
+    min-width: 200px;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  /* FK/table-menu popovers: anchor right so they don't overflow left */
+  .fk-popover,
+  .table-menu-dropdown {
+    left: auto;
+    right: 0;
+  }
+}
+
+/* Mobile: single-panel view with tabs */
+@media (max-width: 767px) {
+  /* Header: db name on full-width row, buttons share the row below */
+  .split-left-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+
+    /* EditableField takes its own full-width row */
+    > #schema-database-title {
+      flex: 0 0 100%;
+    }
+
+    /* CSV + Templates split the button row evenly */
+    > .csv-import-btn {
+      flex: 1 1 0;
+      flex-shrink: 1;
+      text-align: center;
+      white-space: normal;
+    }
+
+    > .template-picker-wrap {
+      flex: 1 1 0;
+
+      > .template-picker-btn {
+        width: 100%;
+        flex-shrink: 1;
+        text-align: center;
+        white-space: normal;
+      }
+    }
+  }
+
+  /* Template dropdown: clamp to viewport width */
+  .template-dropdown {
+    right: 0;
+    left: auto;
+    min-width: 0;
+    width: min(280px, 90vw);
+  }
+
   main.split-canvas {
     flex-direction: column;
-    height: auto;
-    overflow: visible;
+    /* fill only what the page-content viewport offers after its own padding */
+    height: calc(100dvh - 52px - 64px);
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Tab bar appears, panels share remaining height */
+  .mobile-panel-tabs {
+    display: flex;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .mobile-panel-tab {
+    flex: 1;
+    padding: 11px 8px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s, border-color 0.15s;
+
+    &.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+  }
+
+  /* Panel visibility controlled via data-mobile-tab */
+  main.split-canvas[data-mobile-tab="form"] .split-right {
+    display: none;
+  }
+  main.split-canvas[data-mobile-tab="sql"] .split-left {
+    display: none;
   }
 
   .split-left, .split-right {
-    flex: unset;
+    flex: 1;
     width: 100%;
-    height: auto;
+    min-height: 0;
   }
 
   .split-right {
-    min-height: 300px;
     border-left: none;
-    border-top: 1px solid rgba(255,255,255,0.06);
+    border-top: none;
+  }
+
+  /* Right-panel actions become horizontal on mobile */
+  .right-panel-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 14px;
+
+    .action-btn {
+      flex: 1;
+      min-width: calc(50% - 6px);
+      text-align: center;
+      font-size: 12px;
+      padding: 10px 8px;
+    }
+
+    .action-btn.primary {
+      flex: 100%;
+    }
   }
 }
 

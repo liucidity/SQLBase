@@ -2,7 +2,6 @@
 
 ARG NODE_VERSION=20
 FROM node:${NODE_VERSION}-slim AS base
-LABEL fly_launch_runtime="Node.js"
 WORKDIR /app
 
 # ── Build stage ──────────────────────────────────────────────────────────────
